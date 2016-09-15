@@ -3,7 +3,7 @@ title = My project
 version = 0.1
 
 [bootstrap]
-main_collection = /main/main.collectionc
+main_collection = /example/example.collectionc
 
 [input]
 game_binding = /input/game.input_bindingc

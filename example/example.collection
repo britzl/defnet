@@ -2,17 +2,12 @@ name: "main"
 scale_along_z: 0
 embedded_instances {
   id: "go"
-  data: "embedded_components {\n"
-  "  id: \"sprite\"\n"
-  "  type: \"sprite\"\n"
-  "  data: \"tile_set: \\\"/main/logo.atlas\\\"\\n"
-  "default_animation: \\\"logo\\\"\\n"
-  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
-  "blend_mode: BLEND_MODE_ALPHA\\n"
-  "\"\n"
+  data: "components {\n"
+  "  id: \"gui\"\n"
+  "  component: \"/example/example.gui\"\n"
   "  position {\n"
-  "    x: 640.0\n"
-  "    y: 360.0\n"
+  "    x: 0.0\n"
+  "    y: 0.0\n"
   "    z: 0.0\n"
   "  }\n"
   "  rotation {\n"
@@ -24,8 +19,8 @@ embedded_instances {
   "}\n"
   ""
   position {
-    x: 0.0
-    y: 0.0
+    x: 640.0
+    y: 360.0
     z: 0.0
   }
   rotation {

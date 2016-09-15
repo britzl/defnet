@@ -1,0 +1,102 @@
+local p2p_discovery = require "defnet.p2p_discovery"
+local tcp_server = require "defnet.tcp_server"
+local tcp_client = require "defnet.tcp_client"
+local http_server = require "defnet.http_server"
+
+local P2P_PORT = 50000
+local TCP_SERVER_PORT = 9191
+local HTTP_SERVER_PORT = 9190
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	self.create_server = gui.get_node("create_server/button")
+	self.create_client = gui.get_node("create_client/button")
+	self.send_to_server = gui.get_node("send_to_server/button")
+	self.send_to_clients = gui.get_node("send_to_clients/button")
+	self.logo = gui.get_node("logo")
+	gui.set_enabled(self.send_to_server, false)
+	gui.set_enabled(self.send_to_clients, false)
+	
+	self.hs = http_server.create(HTTP_SERVER_PORT)
+	self.hs.router.get("/foo/(.*)$", function(what)
+		return http_server.html("boo" .. what)
+	end)
+	self.hs.router.get("/$", function()
+		return http_server.html("Hello World")
+	end)
+	self.hs.router.unhandled(function(method, uri)
+		return http_server.html("Oops, couldn't find that one!", 404)
+	end)	
+	
+	self.p2p = p2p_discovery.create(P2P_PORT)
+	
+	self.server = tcp_server.create(TCP_SERVER_PORT, function(data, ip)
+		print("TCP server received data " .. data .. " from " .. ip)
+		gui.animate(self.logo, "rotation.z", gui.get_rotation(self.logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
+	end)
+	
+	self.type = nil
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+	
+	self.hs.stop()
+	self.p2p.stop()
+	if self.server then
+		self.server.stop()
+	end
+	if self.client then
+		self.client.destroy()
+	end
+end
+
+function update(self, dt)
+	self.hs.update()
+	self.p2p.update()
+	if self.server then
+		self.server.update()
+	end
+	if self.client then
+		self.client.update()
+	end
+end
+
+function on_input(self, action_id, action)
+	if gui.pick_node(self.create_server, action.x, action.y) and action.released and not self.type then
+		print("Creating server")
+		gui.set_enabled(self.create_server, false)
+		gui.set_enabled(self.create_client, false)
+		gui.set_enabled(self.send_to_clients, true)
+		self.type = "server"
+		self.hs.start()
+		self.p2p.broadcast("findme")
+		self.server.start()
+	elseif gui.pick_node(self.create_client, action.x, action.y) and action.released and not self.type then
+		print("Creating client")
+		gui.set_enabled(self.create_server, false)
+		gui.set_enabled(self.create_client, false)
+		self.type = "client"
+		self.p2p.listen("findme", function(ip, port)
+			print("Found server", ip, port)
+			print("Creating TCP client")
+			self.client = tcp_client.create(ip, TCP_SERVER_PORT, function(data)
+				print("TCP client received response " .. data)
+				gui.animate(self.logo, "rotation.z", gui.get_rotation(self.logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
+			end)
+			gui.set_enabled(self.send_to_server, true)
+		end)
+	elseif gui.pick_node(self.send_to_server, action.x, action.y) and action.released and self.client then
+		print("Sending data to TCP server")
+		self.client.send("foobar\n")
+	elseif gui.pick_node(self.send_to_clients, action.x, action.y) and action.released and self.type == "server" then
+		print("Sending data to TCP clients")
+		self.server.send("foobar\n")
+	end
+end
+
+function on_reload(self)
+    -- Add input-handling code here
+    -- Remove this function if not needed
+end
