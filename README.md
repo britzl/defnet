@@ -24,7 +24,8 @@ You can use the modules from this project in your own project by adding this pro
 
 Or point to the ZIP file of a [specific release](https://github.com/britzl/defnet/releases).
 
-## Peer to peer discovery
+## Included modules
+### Peer to peer discovery
 The `defnet/p2p_discovery` module can be used to perform peer to peer discovery using UDP sockets. The basic idea is that an app sets itself up as discoverable and starts sending a broadcast message on the network. Other clients can listen for broadcasted messages and get the IP of the app that wishes to be discovered. This is how an app can set itself up as discoverable:
 
 	local p2p_discovery = require "defnet.p2p_discovery"
@@ -39,7 +40,7 @@ The `defnet/p2p_discovery` module can be used to perform peer to peer discovery 
 		self.p2p.update()
 	end
 
-And this is how an app would discover it:
+And this is how another app would discover it:
 
 	local p2p_discovery = require "defnet.p2p_discovery"
 	local PORT = 50000
@@ -57,7 +58,7 @@ And this is how an app would discover it:
 
 Once discovery has been completed communication can take place over a socket of some kind.
 
-## TCP socket server
+### TCP socket server
 The `defnet/tcp_server` module can be used to create a TCP socket server that accepts incoming TCP client connections and can send and receive data. Example:
 
 	local tcp_server = require "defnet.tcp_server"
@@ -79,7 +80,7 @@ The `defnet/tcp_server` module can be used to create a TCP socket server that ac
 		self.server.send("Sending this to all clients\n")
 	end
 
-## TCP socket client
+### TCP socket client
 The `defnet/tcp_client` module can be used to create a TCP socket client and connect it. Example:
 
 	local tcp_client = require "defnet.tcp_client"
@@ -100,7 +101,7 @@ The `defnet/tcp_client` module can be used to create a TCP socket client and con
 		self.client.send("Sending this to the server\n")
 	end
 
-## HTTP server
+### HTTP server
 Since it's possible to create a TCP socket it's also possible to build more advanced things such as HTTP servers. The `defnet/http_server` module can be used to create a simple HTTP server with basic page routing support. Example:
 
 	local http_sever = require "defnet/http_sever"
@@ -123,3 +124,20 @@ Since it's possible to create a TCP socket it's also possible to build more adva
 	function update(self, dt)
 		self.hs.update()
 	end
+
+### WebSockets
+What about WebSockets? [Have a look at this example](https://github.com/britzl/publicexamples/tree/master/examples/websocket).
+
+## Example
+There's an example project in the [example folder](https://github.com/britzl/defnet/tree/master/example).
+
+## Found a bug? Made an improvement?
+There are probably bugs. Please report them!
+
+Did you improve some of the code? Please create a Pull Request!
+
+## License
+This library is released under the same [Terms and Conditions as the Defold editor and service itself](http://www.defold.com/about-terms/).
+
+## Credits
+Assets in the example project are made by [Kenney](http://www.kenney.nl)
