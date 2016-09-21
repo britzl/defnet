@@ -126,7 +126,7 @@ Since it's possible to create a TCP socket it's also possible to build more adva
 	end
 
 ### WebSockets
-What about WebSockets? [Have a look at this example](https://github.com/britzl/publicexamples/tree/master/examples/websocket).
+WebSocket connections are possible using the [lua-websocket](https://github.com/lipp/lua-websockets) project. There is however a couple of things to keep in mind when using a WebSocket in Defold. Please refer to the [README](defnet/websocket/README.md) for more details.
 
 ## Example
 There's an example project in the [example folder](https://github.com/britzl/defnet/tree/master/example).
