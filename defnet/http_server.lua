@@ -36,11 +36,11 @@ local SERVER_HEADER = "Server: Simple Lua Server v1"
 --- Return a properly formatted HTML response with the
 -- appropriate response headers set
 -- @param document HTML document
--- @param status HTTP response code
+-- @param status HTTP response code, eg "200 OK"
 -- @return The response
 function M.html(document, status)
 	local resp = {
-		"HTTP/1.1 " .. (status or 200),
+		"HTTP/1.1 " .. (status or "200 OK"),
 		SERVER_HEADER,
 		"Content-Type: text/html",
 		"Content-Length: " .. tostring(#document),
@@ -53,7 +53,7 @@ end
 
 function M.json(json, status)
 	local resp = {
-		"HTTP/1.1 " .. (status or 200),
+		"HTTP/1.1 " .. (status or "200 OK"),
 		SERVER_HEADER,
 		"Content-Type: application/json; charset=utf-8",
 		"Content-Length: " .. tostring(#json),
