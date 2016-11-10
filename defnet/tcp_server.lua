@@ -64,6 +64,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		for i,connection in pairs(clients) do
 			if connection == connection_to_remove then
 				table.remove(clients, i)
+				queues[connection_to_remove] = nil
 				if on_client_disconnected then
 					on_client_disconnected(connection:getsockname())
 				end
@@ -146,25 +147,25 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		end
 		
 		-- read from client sockets that has data
-		local read, write = socket.select(clients, nil, 0)
-		if next(read) then
-			for _,client in ipairs(read) do
-				local data, err = server.receive(client)
-				if data and on_data then
-					local response = on_data(data, client:getsockname())
-					if response then
-						client:send(response)
-					end
+		local read, write, err = socket.select(clients, nil, 0)
+		for _,client in ipairs(read) do
+			local data, err = server.receive(client)
+			if data and on_data then
+				local response = on_data(data, client:getsockname())
+				if response then
+					queues[client].add(response)
 				end
-				if err and err == "closed" then
-					remove_client(client)
-				end
+			end
+			if err and err == "closed" then
+				print("Client connection closed")
+				remove_client(client)
 			end
 		end
 		
-		-- send to client sockets
-		for client,queue in pairs(queues) do
-			queue.send()
+		-- send to client sockets that are writable
+		local read, write, err = socket.select(nil, clients, 0)
+		for _,client in ipairs(write) do
+			queues[client].send()
 		end
 	end
 

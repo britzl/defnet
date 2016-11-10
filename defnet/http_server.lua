@@ -113,7 +113,7 @@ function M.create(port)
 			local data, err, buf = conn:receive("*l", buf)
 			local closed = (err == "closed")
 			if closed or (err ~= "timeout" and (not data or data == "\r\n" or data == "")) then
-				return request, "closed"
+				return request, err
 			elseif data then
 				table.insert(request, data)
 				buf = ""
