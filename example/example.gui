@@ -69,7 +69,7 @@ nodes {
 }
 nodes {
   position {
-    x: 640.0
+    x: 320.0
     y: 591.434
     z: 0.0
     w: 1.0
@@ -123,7 +123,7 @@ nodes {
 }
 nodes {
   position {
-    x: 530.0
+    x: 180.0
     y: 360.0
     z: 0.0
     w: 1.0
@@ -167,7 +167,7 @@ nodes {
   alpha: 1.0
   template: "/assets/button.gui"
   template_node_child: false
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   position {
@@ -280,9 +280,6 @@ nodes {
   parent: "create_server/button"
   layer: "text"
   inherit_alpha: true
-  clipping_mode: CLIPPING_MODE_NONE
-  clipping_visible: true
-  clipping_inverted: false
   alpha: 1.0
   outline_alpha: 1.0
   shadow_alpha: 1.0
@@ -290,11 +287,10 @@ nodes {
   template_node_child: true
   text_leading: 1.0
   text_tracking: 0.0
-  size_mode: SIZE_MODE_AUTO
 }
 nodes {
   position {
-    x: 750.0
+    x: 460.0
     y: 360.0
     z: 0.0
     w: 1.0
@@ -338,7 +334,7 @@ nodes {
   alpha: 1.0
   template: "/assets/button.gui"
   template_node_child: false
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   position {
@@ -451,9 +447,6 @@ nodes {
   parent: "create_client/button"
   layer: "text"
   inherit_alpha: true
-  clipping_mode: CLIPPING_MODE_NONE
-  clipping_visible: true
-  clipping_inverted: false
   alpha: 1.0
   outline_alpha: 1.0
   shadow_alpha: 1.0
@@ -461,11 +454,10 @@ nodes {
   template_node_child: true
   text_leading: 1.0
   text_tracking: 0.0
-  size_mode: SIZE_MODE_AUTO
 }
 nodes {
   position {
-    x: 640.0
+    x: 320.0
     y: 421.7811
     z: 0.0
     w: 1.0
@@ -509,7 +501,7 @@ nodes {
   alpha: 1.0
   template: "/assets/button.gui"
   template_node_child: false
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   position {
@@ -622,9 +614,6 @@ nodes {
   parent: "send_to_server/button"
   layer: "text"
   inherit_alpha: true
-  clipping_mode: CLIPPING_MODE_NONE
-  clipping_visible: true
-  clipping_inverted: false
   alpha: 1.0
   outline_alpha: 1.0
   shadow_alpha: 1.0
@@ -633,11 +622,10 @@ nodes {
   template_node_child: true
   text_leading: 1.0
   text_tracking: 0.0
-  size_mode: SIZE_MODE_AUTO
 }
 nodes {
   position {
-    x: 640.0
+    x: 320.0
     y: 421.7811
     z: 0.0
     w: 1.0
@@ -681,7 +669,7 @@ nodes {
   alpha: 1.0
   template: "/assets/button.gui"
   template_node_child: false
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   position {
@@ -794,9 +782,6 @@ nodes {
   parent: "send_to_clients/button"
   layer: "text"
   inherit_alpha: true
-  clipping_mode: CLIPPING_MODE_NONE
-  clipping_visible: true
-  clipping_inverted: false
   alpha: 1.0
   outline_alpha: 1.0
   shadow_alpha: 1.0
@@ -805,7 +790,6 @@ nodes {
   template_node_child: true
   text_leading: 1.0
   text_tracking: 0.0
-  size_mode: SIZE_MODE_AUTO
 }
 layers {
   name: "below"

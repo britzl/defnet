@@ -52,6 +52,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 	assert(on_data, "You must provide an on_data function")
 
 	print("Creating TCP server")
+	
 	local server = {}
 
 	local co = nil
@@ -66,14 +67,15 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 				table.remove(clients, i)
 				queues[connection_to_remove] = nil
 				if on_client_disconnected then
-					on_client_disconnected(connection:getsockname())
+					local client_ip, client_port = client:getsockname()
+					on_client_disconnected(client_ip, client_port)
 				end
 				break
 			end
 		end
 	end
 
-	--- Start the socket server and listen for clients
+	--- Start the TCP socket server and listen for clients
 	-- Each connection is run in it's own coroutine
 	-- @return success
 	-- @return error_message
@@ -83,7 +85,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			server_socket = assert(socket.bind("*", port))
 		end)
 		if not server_socket or err then
-			print("Unable to start server", err)
+			print("Unable to start TCP server", err)
 			return false, err
 		end
 
@@ -97,7 +99,8 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 					table.insert(clients, client)
 					queues[client] = tcp_send_queue.create(client)
 					if on_client_connected then
-						on_client_connected(client:getsockname())
+						local client_ip, client_port = client:getsockname()
+						on_client_connected(client_ip, client_port)
 					end
 				end
 				coroutine.yield()
@@ -107,7 +110,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		return true
 	end
 
-	--- Stop the socket server. The socket and all
+	--- Stop the TCP socket server. The socket and all
 	-- clients will be closed
 	function server.stop()
 		if server_socket then
@@ -130,8 +133,8 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			queue.add(data)
 		end
 	end
-
-	--- Update the socket server. This will resume all
+	
+	--- Update the TCP socket server. This will resume all
 	-- the spawned coroutines in order to check for new
 	-- clients and data on existing clients
 	function server.update()
@@ -151,8 +154,10 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		for _,client in ipairs(read) do
 			local data, err = server.receive(client)
 			if data and on_data then
-				local response = on_data(data, client:getsockname())
+				local client_ip, client_port = client:getsockname()
+				local response = on_data(data, client_ip, client_port)
 				if response then
+					print("adding tcp response")
 					queues[client].add(response)
 				end
 			end
