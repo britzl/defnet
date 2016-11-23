@@ -1,0 +1,48 @@
+go.property("is_opponent", false)
+
+local platformer = require "ludobits.m.platformer"
+local input = require "ludobits.m.input"
+
+local MSG_LEFT = hash("left")
+local MSG_RIGHT = hash("right")
+local MSG_STOP = hash("stop")
+local MSG_JUMP = hash("jump")
+local MSG_ABORT_JUMP = hash("abort_jump")
+local MSG_NAME = hash("name")
+
+function init(self)
+	self.physics = platformer.create({ hash("ground") })
+	self.physics.gravity = -800
+end
+
+function final(self)
+end
+
+function update(self, dt)
+	self.physics.update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	self.physics.on_message(message_id, message, sender)
+	if message_id == MSG_NAME then
+		label.set_text("#name", message.name or "John Smith")
+	elseif message_id == MSG_LEFT then
+		self.physics.left(140)
+	elseif message_id == MSG_RIGHT then
+		self.physics.right(140)
+	elseif message_id == MSG_STOP then
+		self.physics.stop()
+	elseif message_id == MSG_JUMP then
+		self.physics.jump(800)
+	elseif message_id == MSG_ABORT_JUMP then
+		self.physics.abort_jump()
+	end
+end
+
+function on_input(self, action_id, action)
+end
+
+function on_reload(self)
+    -- Add reload-handling code here
+    -- Remove this function if not needed
+end

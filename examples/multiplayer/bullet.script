@@ -1,0 +1,17 @@
+go.property("direction", vmath.vector3(100, 0, 0))
+
+local MSG_COLLISION_RESPONSE = hash("collision_response")
+
+function update(self, dt)
+	go.set_position(go.get_position() + self.direction * dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == MSG_COLLISION_RESPONSE then
+		go.delete()
+	end
+end
+function on_reload(self)
+    -- Add reload-handling code here
+    -- Remove this function if not needed
+end

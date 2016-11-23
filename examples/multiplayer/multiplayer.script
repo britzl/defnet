@@ -1,0 +1,85 @@
+local input = require "ludobits.m.input"
+local multiplayer = require "examples.multiplayer.multiplayer"
+local trickle = require "examples.multiplayer.trickle"
+
+local LEFT = hash("left")
+local RIGHT = hash("right")
+local JUMP = hash("jump")
+
+local position_signature = {
+	{ x = "float" },
+	{ y = "float" },
+}
+
+local function create_player(position, name, is_opponent)
+	local id = factory.create("#playerfactory", position, nil, { is_opponent = is_opponent }, 1)
+	msg.post(id, "name", { name = name })
+	return id
+end
+
+
+function init(self)
+	input.acquire()
+	math.randomseed(os.time())
+	self.players = {}
+	self.players["player"] = create_player(vmath.vector3(200, 400, 0), "Player", false)
+	
+	multiplayer.start()
+	multiplayer.register_handler(multiplayer.JOIN, function(message)
+		print("join", message.ip, message.port)
+		local key = message.ip .. message.port
+		self.players[key] = create_player(vmath.vector3(math.random(150, 150), 400, 0), key, true)
+	end)
+	multiplayer.register_handler(multiplayer.LEAVE, function(message)
+		print("leave", message.ip, message.port)
+		local key = message.ip .. message.port
+		if self.players[key] then
+			go.delete(self.players[key])
+			self.players[key] = nil
+		end
+	end)
+	multiplayer.register_handler(POSITION, function(message)
+	end)
+end
+
+function final(self)
+	input.release()
+	multiplayer.stop()
+
+	for k,player in pairs(self.players) do
+		go.delete(player)
+	end
+end
+
+function update(self, dt)
+	multiplayer.update(dt)
+
+	if input.is_pressed(LEFT) then
+		msg.post(self.players["player"], "left")
+		local pos = go.get_position(self.players["player"])
+	elseif input.is_pressed(RIGHT) then
+		msg.post(self.players["player"], "right")
+	else
+		msg.post(self.players["player"], "stop")
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	multiplayer.on_message(message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+	input.on_input(action_id, action)
+	if action_id == JUMP then
+		if action.pressed then
+			msg.post(self.players["player"], "jump")
+		elseif action.released then
+			msg.post(self.players["player"], "abort_jump")
+		end
+	end
+end
+
+function on_reload(self)
+    -- Add reload-handling code here
+    -- Remove this function if not needed
+end
