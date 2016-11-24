@@ -1,9 +1,13 @@
 [project]
 title = DefNet
 version = 0.1
+dependencies = https://github.com/britzl/ludobits/archive/0.8.2.zip
+branch = unknown
+commit = unknown
+build = unknown
 
 [bootstrap]
-main_collection = /example/example.collectionc
+main_collection = /examples/multiplayer/multiplayer.collectionc
 
 [input]
 game_binding = /input/game.input_bindingc
