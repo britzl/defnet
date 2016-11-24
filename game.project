@@ -7,7 +7,7 @@ commit = unknown
 build = unknown
 
 [bootstrap]
-main_collection = /examples/multiplayer/multiplayer.collectionc
+main_collection = /examples/basic/example.collectionc
 
 [input]
 game_binding = /input/game.input_bindingc
