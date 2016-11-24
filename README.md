@@ -108,45 +108,40 @@ The `defnet/tcp_client` module can be used to create a TCP socket client and con
 		self.client.send("Sending this to the server\n")
 	end
 	
-### UDP socket server
-The `defnet/udp_server` module can be used to create a super simple UDP server. The module does no connect handling since it is very application specific. The module will simply forward any incoming data to a callback function and send data to a specific IP and port. Example:
+### UDP client
+The `defnet/udp` module can be used to create an UDP connection. The connection can either be unconnected and send and receive data from any IP and port or connected and bound to a specific port and/or send only to a specific IP and port.
 
-	local udp_server = require "defnet.udp_server"
+The module will simply forward any incoming data to a callback function. Example:
+
+	local udp = require "defnet.udp"
 
 	function init(self)
-		self.udp = udp_server.create(9192, function(data, ip, port)
-			self.udp.send("echo", ip, port)
+		self.udp_server = udp.create(function(data, ip, port)
+			print("Received data", data, ip, port)
+		end, 9999)
+
+		self.udp1 = udp.create(function(data, ip, port)
+			print("Received data", data, ip, port)
+		end, nil, "127.0.0.1", 9999)
+		self.udp1.send("foobar to server")
+
+		self.udp2 = udp.create(function(data, ip, port)
+			print("Received data", data, ip, port)
 		end)
+		self.udp2.send("foobar to server", "127.0.0.1", 9990)
 	end
 
 	function final(self)
-		self.udp.stop()
+		self.udp_server.destroy()
+		self.udp1.destroy()
+		self.udp2.destroy()
 	end
 
 	function update(self, dt)
-		self.udp.update()
+		self.udp_server.update()
+		self.udp1.update()
+		self.udp2.update()
 	end
-
-### UDP socket client
-The `defnet/udp_client` module can be used to create an UDP socket client and connect it. Example:
-
-local udp_client = require "defnet.udp_client"
-local PEER_IP = "localhost"	-- perhaps using p2p discovery?
-local PEER_PORT = 9192
-
-function init(self)
-	self.udp = udp_client.create(PEER_IP, PEER_PORT, function(data)
-		print("Received data from peer", data)
-	end)
-end
-
-function final(self)
-	self.udp.destroy()
-end
-
-function update(self, dt)
-	self.udp.update()
-end
 
 ### HTTP server
 Since it's possible to create a TCP socket it's also possible to build more advanced things such as HTTP servers. The `defnet/http_server` module can be used to create a simple HTTP server with basic page routing support. Example:
