@@ -1,7 +1,5 @@
 local flow = require "ludobits.m.flow"
 local p2p_discovery = require "defnet.p2p_discovery"
-local udp_server = require "defnet.udp_server"
-local udp_client = require "defnet.udp_client"
 local udp = require "defnet.udp"
 
 local trickle = require "examples.multiplayer.trickle"
@@ -25,8 +23,15 @@ local mp = {
 	clients = {},
 	message_signatures = {},
 	message_handlers = {},
+	stream = trickle.create(),
 }
 
+
+M.HEARTBEAT = "HEARTBEAT"
+M.CLIENT_JOINED = "CLIENT_JOINED"
+M.CLIENT_LEFT = "CLIENT_LEFT"
+M.JOIN_SERVER = "JOIN_SERVER"
+M.LEAVE_SERVER = "LEAVE_SERVER"
 
 local client_joined_signature = {
 	{ "ip", "string" },
@@ -42,64 +47,13 @@ local join_server_signature = {
 	{ "id", "string" },
 }
 
-local leave_server_signature = {}
+local leave_server_signature = {
+	{ "id", "string" },
+}
 
 local heartbeat_signature = {
 	{ "id", "string" },
 }
-
-M.HEARTBEAT = "HEARTBEAT"
-M.CLIENT_JOINED = "CLIENT_JOINED"
-M.CLIENT_LEFT = "CLIENT_LEFT"
-M.JOIN_SERVER = "JOIN_SERVER"
-M.LEAVE_SERVER = "LEAVE_SERVER"
-
-
-local function get_ip()
-	for _,network_card in pairs(sys.get_ifaddrs()) do
-		if network_card.up and network_card.address then
-			pprint(network_card)
-			return network_card.address
-		end
-	end
-	return nil
-end
-
-
-local function find_client(id)
-	assert(id, "You must provide an id")
-	return mp.clients[id]
-end
-
-local function remove_client(id)
-	assert(id, "You must provide an id")
-	mp.clients[id] = nil
-end
-
-local function add_client(ip, port, id)
-	assert(ip, "You must provide an ip")
-	assert(port, "You must provide a port")
-	assert(id, "You must provide an id")
-	mp.clients[id] = { ip = ip, port = port, ts = socket.gettime(), id = id }
-end
-
-local function refresh_client(id)
-	assert(id, "You must provide an id")
-	local client = find_client(id)
-	if client then
-		client.ts = socket.gettime()
-	else
-		print("unable to find client", id)
-	end
-end
-
-local function send_to_clients(message, verbose)
-	assert(message, "You must provide a message")
-	for _,client in pairs(mp.clients) do
-		if verbose then print("sending to", client.ip, client.port) end
-		mp.udp_client.send(message, client.ip, client.port)
-	end
-end
 
 local function create_client_joined_message(ip, port, id)
 	assert(ip, "You must provide an ip")
@@ -127,10 +81,10 @@ local function create_join_server_message(id)
 	return tostring(message)
 end
 
-local function create_leave_server_message()
+local function create_leave_server_message(id)
 	local message = trickle.create()
 	message:writeString(M.LEAVE_SERVER)
-	message:pack({}, leave_server_signature)
+	message:pack({ id = id }, leave_server_signature)
 	return tostring(message)
 end
 
@@ -142,17 +96,6 @@ local function create_heartbeat_message(id)
 	return tostring(message)
 end
 
-local function send_client_joined_message(ip, port, id)
-	assert(ip, "You must provide an ip")
-	assert(port, "You must provide a port")
-	assert(id, "You must provide an id")
-	send_to_clients(create_client_joined_message(ip, port, id), true)
-end
-
-local function send_client_left_message(id)
-	assert(id, "You must provide an id")
-	send_to_clients(create_client_left_message(id))
-end
 
 function M.register_message(message_type, message_signature)
 	assert(message_type, "You must provide a message type")
@@ -167,10 +110,9 @@ function M.register_handler(message_type, handler_fn)
 	table.insert(mp.message_handlers[message_type], handler_fn)
 end
 
-local function notify_handlers(message_type, stream, from_ip, from_port)
+local function handle_message(message_type, stream, from_ip, from_port)
 	assert(message_type, "You must provide a message type")
 	assert(stream, "You must provide a stream")
-	--print("notify handler", message_type, from_ip, from_port)
 	if mp.message_handlers[message_type] and mp.message_signatures[message_type] then
 		local message = stream:unpack(mp.message_signatures[message_type])
 		for _,handler in ipairs(mp.message_handlers[message_type]) do
@@ -180,9 +122,65 @@ local function notify_handlers(message_type, stream, from_ip, from_port)
 end
 
 
+--- Remove a client from the list of clients
+-- @param id Id of the client to remove
+local function remove_client(id)
+	assert(id, "You must provide an id")
+	mp.clients[id] = nil
+end
+
+--- 
+-- Add a client to the list of clients
+-- Can be called multiple times without risking duplicates
+-- @param ip Client ip
+-- @param port Client port
+-- @param id Client id
+local function add_client(ip, port, id)
+	assert(ip, "You must provide an ip")
+	assert(port, "You must provide a port")
+	assert(id, "You must provide an id")
+	mp.clients[id] = { ip = ip, port = port, ts = socket.gettime(), id = id }
+end
+
+--- Update the timestamp for a client
+-- @param id
+local function refresh_client(id)
+	assert(id, "You must provide an id")
+	if mp.clients[id] then
+		mp.clients[id].ts = socket.gettime()
+	end
+end
+
+--- Send a message to all clients
+-- @param message The message to send
+local function send_to_clients(message)
+	assert(message, "You must provide a message")
+	for _,client in pairs(mp.clients) do
+		mp.udp_client.send(message, client.ip, client.port)
+	end
+end
+
+
+
+local function send_client_joined_message(ip, port, id)
+	assert(ip, "You must provide an ip")
+	assert(port, "You must provide a port")
+	assert(id, "You must provide an id")
+	send_to_clients(create_client_joined_message(ip, port, id))
+end
+
+local function send_client_left_message(id)
+	assert(id, "You must provide an id")
+	send_to_clients(create_client_left_message(id))
+end
+
+--- Start the multiplayer module
+-- The module will begin listening for servers on the local network
+-- If no server is found it will create one and start broadcasting
+-- @param on_connected The function to call when connected to a server
 function M.start(on_connected)
+	assert(on_connected)
 	mp.id = generate_unique_id()
-	print("MY ID", mp.id)
 	M.register_message(M.JOIN_SERVER, join_server_signature)
 	M.register_message(M.LEAVE_SERVER, leave_server_signature)
 	M.register_message(M.CLIENT_JOINED, client_joined_signature)
@@ -190,49 +188,44 @@ function M.start(on_connected)
 	M.register_message(M.HEARTBEAT, heartbeat_signature)
 	
 	M.register_handler(M.CLIENT_JOINED, function(message, from_ip, from_port)
-		print("CLIENT_JOINED handler")
 		add_client(message.ip, message.port, message.id)
 	end)
 	M.register_handler(M.CLIENT_LEFT, function(message, from_ip, from_port)
-		print("CLIENT_LEFT handler")
 		remove_client(message.id)
 	end)
 	M.register_handler(M.HEARTBEAT, function(message, from_ip, from_port)
-		--print("HEARTBEAT handler", from_ip, from_port, message.id)
 		refresh_client(message.id)
 	end)
 	M.register_handler(M.JOIN_SERVER, function(message, from_ip, from_port)
-		print("JOIN_SERVER handler", from_ip, from_port, message.id)
 		-- notify client of already joined clients
 		for _,client in pairs(mp.clients) do
 			if client.id ~= message.id then
 				mp.udp_client.send(create_client_joined_message(client.ip, client.port, client.id), from_ip, from_port)
 			end
 		end
-		print("JOIN_SERVER adding client")
 		add_client(from_ip, from_port, message.id)
-		print("JOIN_SERVER send_client_joined_message")
-		pprint(mp.clients)
 		send_client_joined_message(from_ip, from_port, message.id)
 	end)
 	M.register_handler(M.LEAVE_SERVER, function(message, from_ip, from_port)
-		print("LEAVE_SERVER handler")
 		remove_client(message.id)
 		send_client_left_message(message.id)
 	end)
 	
 	flow(function()
-		-- let's start by listening if there's someone already looking for players
-		-- wait for a while and if we don't find a server we start broadcasting
 		mp.p2p_listen = p2p_discovery.create(P2P_PORT)
 		mp.p2p_broadcast = p2p_discovery.create(P2P_PORT)
 
+		-- create our UDP connection
+		-- we use this to communicate with the server
+		-- and the other clients
 		mp.udp_client = udp.create(function(data, ip, port)
 			local stream = trickle.create(data)
 			local message_type = stream:readString()
-			notify_handlers(message_type, stream, ip, port)
+			handle_message(message_type, stream, ip, port)
 		end)
 		
+		-- let's start by listening if there's someone already looking for players
+		-- wait for a while and if we don't find a server we start broadcasting
 		print("LISTEN")
 		mp.state = STATE_LISTENING
 		mp.p2p_listen.listen("findme", function(ip, port)
@@ -241,38 +234,40 @@ function M.start(on_connected)
 			mp.host_ip = ip
 			mp.p2p_listen.stop()
 			
-			print("sending join to server")
-			mp.udp_client.send(create_join_server_message(mp.id), ip, UDP_SERVER_PORT)
+			-- send join message to server
+			mp.udp_client.send(create_join_server_message(mp.id), mp.host_ip, UDP_SERVER_PORT)
 			on_connected(mp.id)
 		end)
 
 		flow.delay(2)
-		
+
+		-- if we're still listening there probably is no server on the network
+		-- let's create one and wait for connections
 		if mp.state == STATE_LISTENING then
 			print("BROADCAST")
 			mp.state = STATE_HOSTING_GAME
 			mp.host_ip = "127.0.0.1"
 			
 			mp.p2p_listen.stop()
-			mp.udp_server = udp_server.create(UDP_SERVER_PORT, function(data, ip, port)
+			mp.udp_server = udp.create(function(data, ip, port)
 				local stream = trickle.create(data)
 				local message_type = stream:readString()
-				if message_type ~= M.HEARTBEAT then
-					print("UDP server received response '" .. message_type .. "'", "from", ip .. ":" .. port)
+				while message_type and message_type ~= "" do
+					handle_message(message_type, stream, ip, port)
+					message_type = stream:readString()
 				end
-				notify_handlers(message_type, stream, ip, port)
-			end)
-			mp.udp_server.start()
+			end, UDP_SERVER_PORT)
 			mp.p2p_broadcast.broadcast("findme")
 			
-			print("hosting server and sending join_server_message to self")
-			mp.udp_client.send(create_join_server_message(mp.id), "127.0.0.1", UDP_SERVER_PORT)
+			-- send a join message to our local server
+			mp.udp_client.send(create_join_server_message(mp.id), mp.host_ip, UDP_SERVER_PORT)
 			on_connected(mp.id)
-			--add_client(mp.udp_client.ip_and_port(), mp.id)
 		end
-			
+
 		while true do
-			-- only the server should be checking
+			-- check for clients that haven't received a heartbeat for a while
+			-- and consider those clients disconnected
+			-- only the server should be checking for
 			if mp.state == STATE_HOSTING_GAME then
 				for k,client in pairs(mp.clients) do
 					if (socket.gettime() - client.ts) > 5 then
@@ -282,6 +277,7 @@ function M.start(on_connected)
 				end
 			end
 			
+			-- send heartbeat for this client to server
 			mp.udp_client.send(create_heartbeat_message(mp.id), mp.host_ip, UDP_SERVER_PORT)
 
 			flow.delay(1)
@@ -289,21 +285,26 @@ function M.start(on_connected)
 	end)
 end
 
-
+--- Send data to all clients
+-- @param data
 function M.send(data)
+	assert(data)
 	send_to_clients(data)
 end
 
+--- Send a message to all clients
+-- The message will be added to the message stream and sent the next time @{update} is called
+-- @param message_type
+-- @param message
 function M.send_message(message_type, message)
 	assert(message_type)
 	assert(message)
 	assert(mp.message_signatures[message_type])
-	local stream = trickle.create()
-	stream:writeString(message_type)
-	stream:pack(message, mp.message_signatures[message_type])
-	send_to_clients(tostring(stream))
+	mp.stream:writeString(message_type)
+	mp.stream:pack(message, mp.message_signatures[message_type])
 end
 
+--- Stop the multiplayer module and all underlying systems
 function M.stop()
 	if mp.p2p_listen then
 		mp.p2p_listen.stop()
@@ -312,14 +313,17 @@ function M.stop()
 		mp.p2p_broadcast.stop()
 	end
 	if mp.udp_server then
-		mp.udp_server.stop()
+		mp.udp_server.destroy()
 	end
 	if mp.udp_client then
 		mp.udp_client.destroy()
 	end
 end
 
-
+--- Update the multiplayer module and all underlying systems
+-- Any data added to the stream will be sent at this time and the
+-- stream will be cleared
+-- @param dt
 function M.update(dt)
 	flow.update(dt)
 	
@@ -335,8 +339,17 @@ function M.update(dt)
 	if mp.udp_client then
 		mp.udp_client.update()
 	end
+	
+	local data = tostring(mp.stream)
+	if data and #data > 0 then
+		send_to_clients(data)
+		mp.stream:clear()
+	end
 end
 
+
+--- Forward any received on_message calls
+-- Needed for the flow module
 function M.on_message(message_id, message, sender)
 	flow.on_message(message_id, message, sender)
 end
