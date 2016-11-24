@@ -70,9 +70,9 @@ function M.create(port, on_data)
 	-- @return success
 	-- @return error_message
 	function server.send(datagram, ip, port)
-		assert(datagram)
-		assert(ip)
-		assert(port)
+		assert(datagram, "You must provide a datagram")
+		assert(ip, "You must provide an IP adress")
+		assert(port, "You must provide a port number")
 		return server_socket:sendto(datagram, ip, port)
 	end
 

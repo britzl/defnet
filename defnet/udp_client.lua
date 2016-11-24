@@ -41,6 +41,8 @@ function M.create(peer_ip, peer_port, on_data)
 		client_socket = socket.udp()
 		assert(client_socket:setpeername(peer_ip, peer_port))
 		assert(client_socket:settimeout(0))
+		client.ip, client.port = assert(client_socket:getsockname())
+		client.port = tonumber(client.port)
 	end)
 	if not ok or not client_socket then
 		print("udp_client.create() error", err)
@@ -74,6 +76,8 @@ function M.create(peer_ip, peer_port, on_data)
 	function client.destroy()
 		if client_socket then
 			client_socket:close()
+			client.ip = nil
+			client.port = nil
 		end
 	end
 	

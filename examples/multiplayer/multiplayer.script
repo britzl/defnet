@@ -7,9 +7,12 @@ local RIGHT = hash("right")
 local JUMP = hash("jump")
 
 local position_signature = {
-	{ x = "float" },
-	{ y = "float" },
+	{ "id", "string" },
+	{ "x", "float" },
+	{ "y", "float" },
 }
+
+local POSITION = "POSITION"
 
 local function create_player(position, name, is_opponent)
 	local id = factory.create("#playerfactory", position, nil, { is_opponent = is_opponent }, 1)
@@ -17,28 +20,50 @@ local function create_player(position, name, is_opponent)
 	return id
 end
 
+local function create_key(ip, port)
+	return ip .. tostring(port)
+end
+
 
 function init(self)
 	input.acquire()
 	math.randomseed(os.time())
 	self.players = {}
-	self.players["player"] = create_player(vmath.vector3(200, 400, 0), "Player", false)
 	
-	multiplayer.start()
-	multiplayer.register_handler(multiplayer.JOIN, function(message)
-		print("join", message.ip, message.port)
-		local key = message.ip .. message.port
-		self.players[key] = create_player(vmath.vector3(math.random(150, 150), 400, 0), key, true)
-	end)
-	multiplayer.register_handler(multiplayer.LEAVE, function(message)
-		print("leave", message.ip, message.port)
-		local key = message.ip .. message.port
-		if self.players[key] then
-			go.delete(self.players[key])
-			self.players[key] = nil
+	self.count = 0
+	
+	multiplayer.register_handler(multiplayer.CLIENT_JOINED, function(message, from_ip, from_port)
+		print("CLIENT_JOINED creating GO", message.id, message.ip, message.port)
+		if not self.players[message.id] then
+			if message.id == self.player_id then
+				self.players[message.id] = create_player(vmath.vector3(math.random(150, 150), 400, 0), "Player", false)
+			else
+				self.players[message.id] = create_player(vmath.vector3(math.random(150, 150), 400, 0), message.id, true)
+			end
+			pprint(self.players)
+		else
+			print("CLIENT_JOINED ALREADY CREATED GO!!!", message.id, message.ip, message.port)
 		end
 	end)
-	multiplayer.register_handler(POSITION, function(message)
+	multiplayer.register_handler(multiplayer.CLIENT_LEFT, function(message, from_ip, from_port)
+		print("leave", message.id)
+		if self.players[message.id] then
+			go.delete(self.players[message.id])
+			self.players[message.id] = nil
+		end
+	end)
+	multiplayer.register_message(POSITION, position_signature)
+	multiplayer.register_handler(POSITION, function(message, from_ip, from_port)
+		--print("POSITION handler", from_ip, from_port, message.x, message.y, message.id)
+		if self.players[message.id] and message.id ~= self.player_id then
+			--print("updating position")
+			go.set_position(vmath.vector3(message.x, message.y, 0), self.players[message.id])
+		end
+	end)
+
+	multiplayer.start(function(my_id)
+		print("on connected", my_id)
+		self.player_id = my_id
 	end)
 end
 
@@ -54,13 +79,22 @@ end
 function update(self, dt)
 	multiplayer.update(dt)
 
-	if input.is_pressed(LEFT) then
-		msg.post(self.players["player"], "left")
-		local pos = go.get_position(self.players["player"])
-	elseif input.is_pressed(RIGHT) then
-		msg.post(self.players["player"], "right")
-	else
-		msg.post(self.players["player"], "stop")
+	if self.player_id then
+		if input.is_pressed(LEFT) then
+			msg.post(self.players[self.player_id], "left")
+		elseif input.is_pressed(RIGHT) then
+			msg.post(self.players[self.player_id], "right")
+		else
+			msg.post(self.players[self.player_id], "stop")
+		end
+
+		self.count = self.count + 1
+		if self.count % 10 == 0 then
+			local pos = go.get_position(self.players[self.player_id])
+			--print("sending pos", pos, self.player_key, self.players[self.player_key])
+			multiplayer.send_message(POSITION, { x = pos.x, y = pos.y, id = self.player_id })
+			--multiplayer.send_message(POSITION, { x = 100, y = 200, id = self.player_id })
+		end
 	end
 end
 
@@ -70,11 +104,13 @@ end
 
 function on_input(self, action_id, action)
 	input.on_input(action_id, action)
-	if action_id == JUMP then
-		if action.pressed then
-			msg.post(self.players["player"], "jump")
-		elseif action.released then
-			msg.post(self.players["player"], "abort_jump")
+	if self.player_id then
+		if action_id == JUMP then
+			if action.pressed then
+				msg.post(self.players[self.player_id], "jump")
+			elseif action.released then
+				msg.post(self.players[self.player_id], "abort_jump")
+			end
 		end
 	end
 end
