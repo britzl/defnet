@@ -18,7 +18,7 @@ The above snippet of code, some reading of the LuaSocket documentation and perha
 Most of the code can be used in a stand-alone version of Lua with the only requirement being LuaSocket. In the modules provided here I `require("builtins.scripts.socket")` which is equivalent to [socket.lua from the LuaSocket library](https://github.com/diegonehab/luasocket/blob/master/src/socket.lua).
 
 ## Installation
-You can use the modules from this project in your own project by adding this project as a [Defold libray dependency](http://www.defold.com/manuals/libraries/). Open your game.project file and in the `dependencies` field under `project` add:
+You can use the modules from this project in your own project by adding this project as a [Defold library dependency](http://www.defold.com/manuals/libraries/). Open your game.project file and in the `dependencies` field under `project` add:
 
 	https://github.com/britzl/defnet/archive/master.zip
 
