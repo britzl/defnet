@@ -88,25 +88,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			print("Unable to start TCP server", err)
 			return false, err
 		end
-
-		co = coroutine.create(function()
-			local ip, port = server_socket:getsockname()
-			server_socket:settimeout(0)
-			while true do
-				local client, err = server_socket:accept()
-				if client then
-					client:settimeout(0)
-					table.insert(clients, client)
-					queues[client] = tcp_send_queue.create(client)
-					if on_client_connected then
-						local client_ip, client_port = client:getsockname()
-						on_client_connected(client_ip, client_port)
-					end
-				end
-				coroutine.yield()
-			end
-		end)
-		coroutine.resume(co)
+		server_socket:settimeout(0)
 		return true
 	end
 
@@ -138,38 +120,47 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 	-- the spawned coroutines in order to check for new
 	-- clients and data on existing clients
 	function server.update()
-		if not co then
+		if not server_socket then
 			return
 		end
-		local status = coroutine.status(co)
-		if status == "suspended" then
-			coroutine.resume(co)
-		elseif status == "dead" then
-			co = nil
-			return
+		
+		-- new connection?
+		local client, err = server_socket:accept()
+		if client then
+			client:settimeout(0)
+			table.insert(clients, client)
+			queues[client] = tcp_send_queue.create(client)
+			if on_client_connected then
+				local client_ip, client_port = client:getsockname()
+				on_client_connected(client_ip, client_port)
+			end
 		end
 		
 		-- read from client sockets that has data
 		local read, write, err = socket.select(clients, nil, 0)
 		for _,client in ipairs(read) do
-			local data, err = server.receive(client)
-			if data and on_data then
-				local client_ip, client_port = client:getsockname()
-				local response = on_data(data, client_ip, client_port)
-				if response then
-					queues[client].add(response)
+			coroutine.wrap(function()
+				local data, err = server.receive(client)
+				if data and on_data then
+					local client_ip, client_port = client:getsockname()
+					local response = on_data(data, client_ip, client_port)
+					if response then
+						queues[client].add(response)
+					end
 				end
-			end
-			if err and err == "closed" then
-				print("Client connection closed")
-				remove_client(client)
-			end
+				if err and err == "closed" then
+					print("Client connection closed")
+					remove_client(client)
+				end
+			end)()
 		end
 		
 		-- send to client sockets that are writable
 		local read, write, err = socket.select(nil, clients, 0)
 		for _,client in ipairs(write) do
-			queues[client].send()
+			coroutine.wrap(function()
+				queues[client].send()
+			end)()
 		end
 	end
 
