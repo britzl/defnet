@@ -67,7 +67,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 				table.remove(clients, i)
 				queues[connection_to_remove] = nil
 				if on_client_disconnected then
-					local client_ip, client_port = client:getsockname()
+					local client_ip, client_port = connection:getsockname()
 					on_client_disconnected(client_ip, client_port)
 				end
 				break
