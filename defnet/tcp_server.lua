@@ -157,7 +157,6 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 				local client_ip, client_port = client:getsockname()
 				local response = on_data(data, client_ip, client_port)
 				if response then
-					print("adding tcp response")
 					queues[client].add(response)
 				end
 			end
