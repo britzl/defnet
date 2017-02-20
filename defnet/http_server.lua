@@ -105,6 +105,10 @@ function M.create(port)
 		local ok, response_or_err = pcall(function()
 			local request_line = data[1] or ""
 			local method, uri, protocol_version = request_line:match("^(%S+)%s(%S+)%s(%S+)")
+			local header_only = (method == "HEAD")
+			if header_only then
+				method = "GET"
+			end
 			local response
 			if uri then
 				for _,route in ipairs(routes) do
@@ -119,6 +123,12 @@ function M.create(port)
 			end
 			if not response and unhandled_route_fn then
 				response = unhandled_route_fn(method, uri)
+			end
+			if method == "HEAD" then
+				local s, e = response:find("\r\n\r\n")
+				if s and e then
+					response = response:sub(1, e)
+				end
 			end
 			return response or ""
 		end)
