@@ -51,6 +51,11 @@ function M.html(document, status)
 end
 
 
+--- Returns a properly formatted JSON response with the
+-- appropriate response headers set
+-- @param json
+-- @param status HTTP response code, eg "200 OK"
+-- @return The response
 function M.json(json, status)
 	local resp = {
 		"HTTP/1.1 " .. (status or "200 OK"),
@@ -62,6 +67,27 @@ function M.json(json, status)
 	}
 	return table.concat(resp, "\r\n")
 end
+
+
+--- Returns a properly formatted binary file response
+-- with the appropriate headers set
+-- @param file The file contents
+-- @param filename Name of the file
+-- @param status HTTP response code, eg "200 OK"
+-- @return The response
+function M.file(file, filename, status)
+	local resp = {
+		"HTTP/1.1 " .. (status or "200 OK"),
+		SERVER_HEADER,
+		"Content-Type: application/octet-stream",
+		"Content-Disposition: attachment; filename=" .. filename,
+		"Content-Length: " .. tostring(#file),
+		"",
+		file
+	}
+	return table.concat(resp, "\r\n")
+end
+
 
 --- Create a new HTTP server
 -- @return Server instance
