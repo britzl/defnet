@@ -35,58 +35,67 @@ local SERVER_HEADER = "Server: Simple Lua Server v1"
 
 --- Return a properly formatted HTML response with the
 -- appropriate response headers set
--- @param document HTML document
--- @param status HTTP response code, eg "200 OK"
--- @return The response
-function M.html(document, status)
-	local resp = {
-		"HTTP/1.1 " .. (status or "200 OK"),
-		SERVER_HEADER,
-		"Content-Type: text/html",
-		"Content-Length: " .. tostring(#document),
-		"",
-		document
-	}
-	return table.concat(resp, "\r\n")
-end
+M.html = {
+	header = function(document, status)
+		local resp = {
+			"HTTP/1.1 " .. (status or "200 OK"),
+			SERVER_HEADER,
+			"Content-Type: text/html",
+			"Content-Length: " .. tostring(#document),
+			"",
+			""
+		}
+		return table.concat(resp, "\r\n")
+	end,
+	response = function(document, status)
+		return M.html.header(document, status) .. document
+	end
+}
+setmetatable(M.html, { __call = function(self, document, status) return M.html.response(document, status) end })
 
 
 --- Returns a properly formatted JSON response with the
 -- appropriate response headers set
--- @param json
--- @param status HTTP response code, eg "200 OK"
--- @return The response
-function M.json(json, status)
-	local resp = {
-		"HTTP/1.1 " .. (status or "200 OK"),
-		SERVER_HEADER,
-		"Content-Type: application/json; charset=utf-8",
-		"Content-Length: " .. tostring(#json),
-		"",
-		json
-	}
-	return table.concat(resp, "\r\n")
-end
+M.json = {
+	header = function(json, status)
+		local resp = {
+			"HTTP/1.1 " .. (status or "200 OK"),
+			SERVER_HEADER,
+			"Content-Type: application/json; charset=utf-8",
+			"Content-Length: " .. tostring(#json),
+			"",
+			""
+		}
+		return table.concat(resp, "\r\n")
+	end,
+	response = function(json, status)
+		return M.json.header(json, status) .. json
+	end
+}
+setmetatable(M.json, { __call = function(self, json, status) return M.json.response(json, status) end })
 
 
 --- Returns a properly formatted binary file response
 -- with the appropriate headers set
--- @param file The file contents
--- @param filename Name of the file
--- @param status HTTP response code, eg "200 OK"
--- @return The response
-function M.file(file, filename, status)
-	local resp = {
-		"HTTP/1.1 " .. (status or "200 OK"),
-		SERVER_HEADER,
-		"Content-Type: application/octet-stream",
-		"Content-Disposition: attachment; filename=" .. filename,
-		"Content-Length: " .. tostring(#file),
-		"",
-		file
-	}
-	return table.concat(resp, "\r\n")
-end
+M.file = {
+	header = function(file, filename, status)
+		local resp = {
+			"HTTP/1.1 " .. (status or "200 OK"),
+			SERVER_HEADER,
+			"Content-Type: application/octet-stream",
+			"Content-Disposition: attachment; filename=" .. filename,
+			"Content-Length: " .. tostring(#file),
+			"",
+			""
+		}
+		return table.concat(resp, "\r\n")
+	end,
+	response = function(file, filename, status)
+		return M.file.header(file, filename, status) .. file
+	end
+}
+setmetatable(M.file, { __call = function(self, file, filename, status) return M.file.response(file, filename, status) end })
+
 
 
 --- Create a new HTTP server
