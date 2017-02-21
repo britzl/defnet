@@ -31,77 +31,18 @@ local tcp_server = require "defnet.tcp_server"
 
 local M = {}
 
-local SERVER_HEADER = "Server: Simple Lua Server v1"
 
---- Return a properly formatted HTML response with the
--- appropriate response headers set
-M.html = {
-	header = function(document, status)
-		local resp = {
-			"HTTP/1.1 " .. (status or "200 OK"),
-			SERVER_HEADER,
-			"Content-Type: text/html",
-			"Content-Length: " .. tostring(#document),
-			"",
-			""
-		}
-		return table.concat(resp, "\r\n")
-	end,
-	response = function(document, status)
-		return M.html.header(document, status) .. document
-	end
-}
-setmetatable(M.html, { __call = function(self, document, status) return M.html.response(document, status) end })
-
-
---- Returns a properly formatted JSON response with the
--- appropriate response headers set
-M.json = {
-	header = function(json, status)
-		local resp = {
-			"HTTP/1.1 " .. (status or "200 OK"),
-			SERVER_HEADER,
-			"Content-Type: application/json; charset=utf-8",
-			"Content-Length: " .. tostring(#json),
-			"",
-			""
-		}
-		return table.concat(resp, "\r\n")
-	end,
-	response = function(json, status)
-		return M.json.header(json, status) .. json
-	end
-}
-setmetatable(M.json, { __call = function(self, json, status) return M.json.response(json, status) end })
-
-
---- Returns a properly formatted binary file response
--- with the appropriate headers set
-M.file = {
-	header = function(file, filename, status)
-		local resp = {
-			"HTTP/1.1 " .. (status or "200 OK"),
-			SERVER_HEADER,
-			"Content-Type: application/octet-stream",
-			"Content-Disposition: attachment; filename=" .. filename,
-			"Content-Length: " .. tostring(#file),
-			"",
-			""
-		}
-		return table.concat(resp, "\r\n")
-	end,
-	response = function(file, filename, status)
-		return M.file.header(file, filename, status) .. file
-	end
-}
-setmetatable(M.file, { __call = function(self, file, filename, status) return M.file.response(file, filename, status) end })
-
+M.OK = "200 OK"
+M.NOT_FOUND = "404 Not Found"
 
 
 --- Create a new HTTP server
 -- @return Server instance
 function M.create(port)
-	local instance = {}
+	local instance = {
+		access_control = "*",		-- set to nil to not enable CORS
+		server_header = "Server: Simple Lua Server v1",
+	}
 
 	local routes = {}
 
@@ -229,6 +170,76 @@ function M.create(port)
 	function instance.update()
 		ss.update()
 	end
+
+	--- Return a properly formatted HTML response with the
+	-- appropriate response headers set
+	instance.html = {
+		header = function(document, status)
+			local headers = {
+				"HTTP/1.1 " .. (status or M.OK),
+				instance.server_header,
+				"Content-Type: text/html",
+				"Content-Length: " .. tostring(#document)
+			}
+			if instance.access_control then
+				headers[#headers + 1] = "Access-Control-Allow-Origin: " .. instance.access_control
+			end
+			headers[#headers + 1] = ""
+			headers[#headers + 1] = ""
+			return table.concat(headers, "\r\n")
+		end,
+		response = function(document, status)
+			return instance.html.header(document, status) .. document
+		end
+	}
+	setmetatable(instance.html, { __call = function(_, document, status) return instance.html.response(document, status) end })
+
+	--- Returns a properly formatted JSON response with the
+	-- appropriate response headers set
+	instance.json = {
+		header = function(json, status)
+			local headers = {
+				"HTTP/1.1 " .. (status or M.OK),
+				instance.server_header,
+				"Content-Type: application/json; charset=utf-8",
+				"Content-Length: " .. tostring(#json)
+			}
+			if instance.access_control then
+				headers[#headers + 1] = "Access-Control-Allow-Origin: " .. instance.access_control
+			end
+			headers[#headers + 1] = ""
+			headers[#headers + 1] = ""
+			return table.concat(headers, "\r\n")
+		end,
+		response = function(json, status)
+			return instance.json.header(json, status) .. json
+		end
+	}
+	setmetatable(instance.json, { __call = function(_, json, status) return instance.json.response(json, status) end })
+
+	--- Returns a properly formatted binary file response
+	-- with the appropriate headers set
+	instance.file = {
+		header = function(file, filename, status)
+			local headers = {
+				"HTTP/1.1 " .. (status or M.OK),
+				instance.server_header,
+				"Content-Type: application/octet-stream",
+				"Content-Disposition: attachment; filename=" .. filename,
+				"Content-Length: " .. tostring(#file),
+			}
+			if instance.access_control then
+				headers[#headers + 1] = "Access-Control-Allow-Origin: " .. instance.access_control
+			end
+			headers[#headers + 1] = ""
+			headers[#headers + 1] = ""
+			return table.concat(headers, "\r\n")
+		end,
+		response = function(file, filename, status)
+			return instance.file.header(file, filename, status) .. file
+		end
+	}
+	setmetatable(instance.file, { __call = function(_, file, filename, status) return instance.file.response(file, filename, status) end })
 
 	return instance
 end
