@@ -37,6 +37,8 @@ local tcp_send_queue = require "defnet.tcp_send_queue"
 
 local M = {}
 
+M.TCP_SEND_CHUNK_SIZE = 200000
+
 --- Creates a new TCP socket server
 -- @param port
 -- @param on_data Function to call when data is received. The
@@ -129,7 +131,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		if client then
 			client:settimeout(0)
 			table.insert(clients, client)
-			queues[client] = tcp_send_queue.create(client)
+			queues[client] = tcp_send_queue.create(client, M.TCP_SEND_CHUNK_SIZE)
 			if on_client_connected then
 				local client_ip, client_port = client:getsockname()
 				on_client_connected(client_ip, client_port)

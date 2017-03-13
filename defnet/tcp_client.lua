@@ -23,6 +23,8 @@ local tcp_send_queue = require "defnet.tcp_send_queue"
 
 local M = {}
 
+M.TCP_SEND_CHUNK_SIZE = 200000
+
 --- Create a TCP socket client and connect it to a server
 -- @param server_ip
 -- @param server_port
@@ -47,7 +49,7 @@ function M.create(server_ip, server_port, on_data)
 		client_socket = socket.tcp()
 		assert(client_socket:connect(server_ip, server_port))
 		assert(client_socket:settimeout(0))
-		send_queue = tcp_send_queue.create(client_socket)
+		send_queue = tcp_send_queue.create(client_socket, M.TCP_SEND_CHUNK_SIZE)
 	end)
 	if not ok or not client_socket or not send_queue then
 		print("tcp_client.create() error", err)
