@@ -35,7 +35,6 @@ local M = {}
 M.OK = "200 OK"
 M.NOT_FOUND = "404 Not Found"
 
-
 --- Create a new HTTP server
 -- @return Server instance
 function M.create(port)
@@ -74,10 +73,12 @@ function M.create(port)
 			if not response and unhandled_route_fn then
 				response = unhandled_route_fn(method, uri)
 			end
-			if method == "HEAD" then
-				local s, e = response:find("\r\n\r\n")
-				if s and e then
-					response = response:sub(1, e)
+			if response then
+				if method == "HEAD" then
+					local s, e = response:find("\r\n\r\n")
+					if s and e then
+						response = response:sub(1, e)
+					end
 				end
 			end
 			return response or ""
