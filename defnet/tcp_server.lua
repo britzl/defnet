@@ -37,7 +37,7 @@ local tcp_send_queue = require "defnet.tcp_send_queue"
 
 local M = {}
 
-M.TCP_SEND_CHUNK_SIZE = 200000
+M.TCP_SEND_CHUNK_SIZE = 8192
 
 --- Creates a new TCP socket server
 -- @param port
