@@ -21,8 +21,19 @@ function init(self)
 	gui.set_enabled(self.send_to_clients, false)
 	
 	self.http_server = http_server.create(HTTP_SERVER_PORT)
-	self.http_server.router.get("/foo/(.*)$", function(what)
-		return self.http_server.html("boo" .. what)
+	self.http_server.router.get("/foo/(.*)$", function(matches)
+		return self.http_server.html("boo" .. matches[1])
+	end)
+	self.http_server.router.get("/lorem$", function(matches, stream)
+		stream(self.http_server.html())
+		local chunks = { "Lorem ", "ipsum ", "dolor ", "sit ", "amet, ", "consectetur ", "adipiscing ", "elit." }
+		return function()
+			if #chunks > 0 then
+				return stream(self.http_server.to_chunk(table.remove(chunks, 1)))
+			else
+				return stream(self.http_server.to_chunk(""))
+			end
+		end
 	end)
 	self.http_server.router.get("/$", function()
 		return self.http_server.html("Hello World")

@@ -145,7 +145,13 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 				local data, err = server.receive(client)
 				if data and on_data then
 					local client_ip, client_port = client:getsockname()
-					local response = on_data(data, client_ip, client_port)
+					local response = on_data(data, client_ip, client_port, function(response)
+						if not queues[client] then
+							return false
+						end
+						queues[client].add(response)
+						return true
+					end)
 					if response then
 						queues[client].add(response)
 					end

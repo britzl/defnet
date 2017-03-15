@@ -6,11 +6,16 @@
 -- 
 --	function init(self)
 --		self.server = http_server.create(9190)
---		self.server.router.get("/", function()
+--		self.server.router.get("^/$", function()
 --			return http_server.html("Hello World")
 --		end)
---		self.server.router.get("/foo", function()
---			return http_server.html("bar")
+--		self.server.router.get("^/foo/(.*)$", function(matches)
+--			return http_server.html("bar" .. matches[1])
+--		end)
+--		self.server.router.get("^/stream$", function(matches, stream)
+--			return function()
+--				stream("some data")
+--			end
 --		end)
 --		self.server.router.unhandled(function(method, uri)
 --			return http_server.html("Oops, couldn't find that one!", 404)
@@ -44,14 +49,16 @@ function M.create(port)
 	}
 
 	local routes = {}
+	
+	local request_handlers = {}
 
 	local unhandled_route_fn = nil
 
-	local ss = tcp_server.create(port, function(data, ip)
+	local ss = tcp_server.create(port, function(data, ip, port, response_fn)
 		if not data or #data == 0 then
 			return
 		end
-		local ok, response_or_err = pcall(function()
+		local ok, err = pcall(function()
 			local request_line = data[1] or ""
 			local method, uri, protocol_version = request_line:match("^(%S+)%s(%S+)%s(%S+)")
 			local header_only = (method == "HEAD")
@@ -64,30 +71,34 @@ function M.create(port)
 					if not route.method or route.method == method then
 						local matches = { uri:match(route.pattern) }
 						if next(matches) then
-							response = route.fn(unpack(matches))
+							response = route.fn(matches, response_fn)
 							break
 						end
 					end
 				end
 			end
 			if not response and unhandled_route_fn then
-				response = unhandled_route_fn(method, uri)
+				response = unhandled_route_fn(method, uri, response_fn)
 			end
 			if response then
+				if type(response) == "function" then
+					table.insert(request_handlers, response)
+				else
+					response_fn(response)
+				end
+			end
+			--[[if response then
 				if method == "HEAD" then
 					local s, e = response:find("\r\n\r\n")
 					if s and e then
 						response = response:sub(1, e)
 					end
 				end
-			end
-			return response or ""
+			end--]]
 		end)
 		if not ok then
-			print(response_or_err)
-			return nil
+			print(err)
 		end
-		return response_or_err
 	end)
 
 	-- Replace the underlying socket server's receive function
@@ -111,9 +122,12 @@ function M.create(port)
 	instance.router = {}
 
 	--- Route HTTP GET requests matching a specific pattern to a
-	-- provided function. The function will receive any matches from
-	-- the pattern as it's arguments
-	-- TODO Add query arg handling
+	-- provided function.
+	-- The function will receive a list of matches from the pattern as
+	-- it's first arguments. The second argument is a stream function in case
+	-- the response should be streamed.
+	-- The function must either return the full response or a function that
+	-- can be called multiple times to get more data to return.
 	-- @param pattern Standard Lua pattern
 	-- @param fn Function to call
 	function instance.router.get(pattern, fn)
@@ -121,11 +135,14 @@ function M.create(port)
 		assert(fn, "You must provide a route handler function")
 		table.insert(routes, { method = "GET", pattern = pattern, fn = fn })
 	end
-
+	
 	--- Route HTTP POST requests matching a specific pattern to a
-	-- provided function. The function will receive any matches from
-	-- the pattern as it's arguments
-	-- TODO Add POST data handling
+	-- provided function.
+	-- The function will receive a list of matches from the pattern as
+	-- it's first arguments. The second argument is a stream function in case
+	-- the response should be streamed.
+	-- The function must either return the full response or a function that
+	-- can be called multiple times to get more data to return.
 	-- @param pattern Standard Lua pattern
 	-- @param fn Function to call
 	function instance.router.post(pattern, fn)
@@ -135,8 +152,12 @@ function M.create(port)
 	end
 
 	--- Route all HTTP requests matching a specific pattern to a
-	-- provided function. The function will receive any matches from
-	-- the pattern as it's arguments
+	-- provided function.
+	-- The function will receive a list of matches from the pattern as
+	-- it's first arguments. The second argument is a stream function in case
+	-- the response should be streamed.
+	-- The function must either return the full response or a function that
+	-- can be called multiple times to get more data to return.
 	-- @param pattern Standard Lua pattern
 	-- @param fn Function to call
 	function instance.router.all(pattern, fn)
@@ -170,17 +191,24 @@ function M.create(port)
 	--- Stop the server
 	function instance.update()
 		ss.update()
+		for k,handler in pairs(request_handlers) do
+			if not handler() then
+				request_handlers[k] = nil
+			end
+		end
 	end
 
 	--- Return a properly formatted HTML response with the
 	-- appropriate response headers set
+	-- If the document is omitted the response is assumed to be
+	-- chunked 
 	instance.html = {
 		header = function(document, status)
 			local headers = {
 				"HTTP/1.1 " .. (status or M.OK),
 				instance.server_header,
 				"Content-Type: text/html",
-				"Content-Length: " .. tostring(#document)
+				document and ("Content-Length: " .. tostring(#document)) or "Transfer-Encoding: chunked",
 			}
 			if instance.access_control then
 				headers[#headers + 1] = "Access-Control-Allow-Origin: " .. instance.access_control
@@ -190,20 +218,22 @@ function M.create(port)
 			return table.concat(headers, "\r\n")
 		end,
 		response = function(document, status)
-			return instance.html.header(document, status) .. document
+			return instance.html.header(document, status) .. (document or "")
 		end
 	}
 	setmetatable(instance.html, { __call = function(_, document, status) return instance.html.response(document, status) end })
 
 	--- Returns a properly formatted JSON response with the
 	-- appropriate response headers set
+	-- If the JSON data is omitted the response is assumed to be
+	-- chunked 
 	instance.json = {
 		header = function(json, status)
 			local headers = {
 				"HTTP/1.1 " .. (status or M.OK),
 				instance.server_header,
 				"Content-Type: application/json; charset=utf-8",
-				"Content-Length: " .. tostring(#json)
+				json and ("Content-Length: " .. tostring(#json)) or "Transfer-Encoding: chunked",
 			}
 			if instance.access_control then
 				headers[#headers + 1] = "Access-Control-Allow-Origin: " .. instance.access_control
@@ -213,13 +243,15 @@ function M.create(port)
 			return table.concat(headers, "\r\n")
 		end,
 		response = function(json, status)
-			return instance.json.header(json, status) .. json
+			return instance.json.header(json, status) .. (json or "")
 		end
 	}
 	setmetatable(instance.json, { __call = function(_, json, status) return instance.json.response(json, status) end })
 
 	--- Returns a properly formatted binary file response
 	-- with the appropriate headers set
+	-- If the file contents is omitted the response is assumed to be
+	-- chunked 
 	instance.file = {
 		header = function(file, filename, status)
 			local headers = {
@@ -227,7 +259,7 @@ function M.create(port)
 				instance.server_header,
 				"Content-Type: application/octet-stream",
 				"Content-Disposition: attachment; filename=" .. filename,
-				"Content-Length: " .. tostring(#file),
+				file and ("Content-Length: " .. tostring(#file)) or "Transfer-Encoding: chunked",
 			}
 			if instance.access_control then
 				headers[#headers + 1] = "Access-Control-Allow-Origin: " .. instance.access_control
@@ -237,11 +269,17 @@ function M.create(port)
 			return table.concat(headers, "\r\n")
 		end,
 		response = function(file, filename, status)
-			return instance.file.header(file, filename, status) .. file
+			return instance.file.header(file, filename, status) .. (file or "")
 		end
 	}
 	setmetatable(instance.file, { __call = function(_, file, filename, status) return instance.file.response(file, filename, status) end })
 
+	--- Create a properly formatted chunk
+	-- @param data
+	-- @return chunk
+	function instance.to_chunk(data)
+		return ("%x\r\n%s\r\n"):format(#data, data)
+	end
 	return instance
 end
 
