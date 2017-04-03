@@ -32,7 +32,6 @@
 --
 
 local socket = require "builtins.scripts.socket"
-require "defnet.coxpcall"
 local tcp_send_queue = require "defnet.tcp_send_queue"
 
 local M = {}
