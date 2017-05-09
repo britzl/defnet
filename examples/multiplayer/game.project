@@ -23,7 +23,7 @@ scale = 0.02
 shared_state = 1
 
 [android]
-package = com.defold.defnet
+package = com.defold.defnet.example.multiplayer
 app_icon_36x36 = /assets/appicons/icon_36.png
 app_icon_48x48 = /assets/appicons/icon_48.png
 app_icon_72x72 = /assets/appicons/icon_72.png
@@ -32,10 +32,10 @@ app_icon_144x144 = /assets/appicons/icon_144.png
 app_icon_192x192 = /assets/appicons/icon_192.png
 
 [osx]
-bundle_identifier = com.defold.defnet
+bundle_identifier = com.defold.defnet.example.multiplayer
 
 [ios]
-bundle_identifier = com.defold.defnet
+bundle_identifier = com.defold.defnet.example.multiplayer
 app_icon_120x120 = /assets/appicons/icon_120.png
 app_icon_180x180 = /assets/appicons/icon_180.png
 app_icon_76x76 = /assets/appicons/icon_76.png
