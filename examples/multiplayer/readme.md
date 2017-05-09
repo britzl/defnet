@@ -3,7 +3,7 @@ This example shows how to create a local network multiplayer game. The example w
 
 When the host receives a connection its is forwarded to all the other clients. The clients themselves communicate directly with each other and repeatedly send a heartbeat message to the host. If a client is shut down or for some other reason is unable to send heartbeat messages it will be removed and the other clients will be notified.
 
-![../../images/multiplayer.gif](../../images/multiplayer.gif)
+![images/multiplayer.gif](images/multiplayer.gif)
 
 ### Discovery and broadcast
 The discovery of a host and broadcasting when acting as a host is done through the [p2p_discovery module](https://github.com/britzl/defnet/blob/master/defnet/p2p_discovery.lua).

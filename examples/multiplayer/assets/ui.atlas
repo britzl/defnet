@@ -1,0 +1,12 @@
+images {
+  image: "/assets/images/colored_shroom.png"
+}
+images {
+  image: "/assets/images/green_button08.png"
+}
+images {
+  image: "/assets/images/logo.png"
+}
+margin: 0
+extrude_borders: 2
+inner_padding: 0

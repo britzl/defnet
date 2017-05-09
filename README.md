@@ -107,7 +107,7 @@ The `defnet/tcp_client` module can be used to create a TCP socket client and con
 		-- on some condition do:
 		self.client.send("Sending this to the server\n")
 	end
-	
+
 ### UDP client
 The `defnet/udp` module can be used to create an UDP connection. The connection can either be unconnected and send and receive data from any IP and port or connected and bound to a specific port and/or send only to a specific IP and port.
 
@@ -176,7 +176,7 @@ Since it's possible to create a TCP socket it's also possible to build more adva
 WebSocket connections are possible using the [lua-websocket](https://github.com/lipp/lua-websockets) project. There is however a couple of things to keep in mind when using a WebSocket in Defold. Please refer to the [README](defnet/websocket/README.md) for more details.
 
 ## Example
-There's an example project in the [example folder](https://github.com/britzl/defnet/tree/master/example).
+There's a few example projects in the [examples folder](https://github.com/britzl/defnet/tree/master/examples).
 
 ## Found a bug? Made an improvement?
 There are probably bugs. Please report them!
