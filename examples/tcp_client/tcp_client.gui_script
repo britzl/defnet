@@ -1,6 +1,6 @@
 local tcp_client = require "defnet.tcp_client"
 
-local SERVER_PORT = 5000
+local SERVER_PORT = 5555
 
 function init(self)
 	msg.post(".", "acquire_input_focus")
@@ -43,6 +43,6 @@ function on_input(self, action_id, action)
 				gui.set_enabled(self.send, false)
 			end)
 	elseif gui.pick_node(self.send, action.x, action.y) and gui.is_enabled(self.send) then
-		self.client.send("foobar " .. tostring(os.time()))
+		self.client.send("foobar " .. tostring(os.time()) .. "\r\n")
 	end
 end
