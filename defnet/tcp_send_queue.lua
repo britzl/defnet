@@ -24,7 +24,7 @@ function M.create(client, chunk_size)
 	function instance.add(data)
 		assert(data, "You must provide some data")
 		for i=1,#data,chunk_size do
-			table.insert(queue, { data = data:sub(i, i + chunk_size - 1), bytes_sent = 0 })
+			table.insert(queue, { data = data:sub(i, i + chunk_size - 1), sent_index = 0 })
 		end
 	end
 	
@@ -34,13 +34,17 @@ function M.create(client, chunk_size)
 			return
 		end
 		
-		local sent, err = client:send(first.data, 1 + first.bytes_sent, #first.data)
-		if not err then
-			first.bytes_sent = first.bytes_sent + sent
-			if first.bytes_sent == #first.data then
-				table.remove(queue, 1)
-			end
+		local sent_index, err, sent_index_on_err = client:send(first.data, first.sent_index + 1, #first.data)
+		if err then
+			first.sent_index = sent_index_on_err
+			return false, err
 		end
+
+		first.sent_index = sent_index
+		if first.sent_index == #first.data then
+			table.remove(queue, 1)
+		end
+		return true
 	end
 	
 	return instance
