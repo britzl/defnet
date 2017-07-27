@@ -96,11 +96,18 @@ The `defnet/tcp_client` module can be used to create a TCP socket client and con
 
 	function init(self)
 		self.client = tcp_client.create(IP, PORT, function(data)
-		print("TCP client received data " .. data)
+			print("TCP client received data " .. data)
+		end,
+		function()
+			print("On disconnected")
+			self.client = nil
+		end)
 	end
 
 	function update(self, dt)
-		self.client.update()
+		if self.client then
+			self.client.update()
+		end
 	end
 
 	function on_input(self, action_id, action)
