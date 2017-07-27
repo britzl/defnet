@@ -30,6 +30,7 @@ M.TCP_SEND_CHUNK_SIZE = 8192
 -- @param server_ip
 -- @param server_port
 -- @param on_data Function to call when data is received from the server
+-- @param on_disconnect Function to call when the connection to the server ends
 -- @return client
 -- @return error
 function M.create(server_ip, server_port, on_data)
@@ -45,11 +46,13 @@ function M.create(server_ip, server_port, on_data)
 	
 	local client_socket = nil
 	local send_queue = nil
+	local client_socket_table = nil
 	
 	local ok, err = pcall(function()
 		client_socket = socket.tcp()
 		assert(client_socket:connect(server_ip, server_port))
 		assert(client_socket:settimeout(0))
+		client_socket_table = { client_socket }
 		send_queue = tcp_send_queue.create(client_socket, M.TCP_SEND_CHUNK_SIZE)
 	end)
 	if not ok or not client_socket or not send_queue then
@@ -72,13 +75,20 @@ function M.create(server_ip, server_port, on_data)
 			return
 		end
 		
-		send_queue.send()
-		
-		local data, err = client_socket:receive(client.pattern or "*l")
-		if data then
-			local response = on_data(data)
-			if response then
-				client.send(response)
+		-- check if the socket is ready for reading and/or writing
+		local receivet, sendt = socket.select(client_socket_table, client_socket_table, 0)
+
+		if sendt[client_socket] then
+			local ok, err = send_queue.send()
+		end
+
+		if receivet[client_socket] then
+			local data, err = client_socket:receive(client.pattern or "*l")
+			if data then
+				local response = on_data(data)
+				if response then
+					client.send(response)
+				end
 			end
 		end
 	end
