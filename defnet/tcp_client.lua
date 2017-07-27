@@ -33,10 +33,11 @@ M.TCP_SEND_CHUNK_SIZE = 8192
 -- @param on_disconnect Function to call when the connection to the server ends
 -- @return client
 -- @return error
-function M.create(server_ip, server_port, on_data)
+function M.create(server_ip, server_port, on_data, on_disconnect)
 	assert(server_ip, "You must provide a server_ip")
 	assert(server_port, "You must provide a server_port")
-	assert(on_data, "You must provide a callback function")
+	assert(on_data, "You must provide an on_data callback function")
+	assert(on_disconnect, "You must provide an on_disconnect callback function")
 	
 	print("Creating TCP client", server_ip, server_port)
 	
@@ -80,6 +81,11 @@ function M.create(server_ip, server_port, on_data)
 
 		if sendt[client_socket] then
 			local ok, err = send_queue.send()
+			if not ok and err == "closed" then
+				client.destroy()
+				on_disconnect()
+				return
+			end
 		end
 
 		if receivet[client_socket] then
@@ -89,6 +95,9 @@ function M.create(server_ip, server_port, on_data)
 				if response then
 					client.send(response)
 				end
+			elseif err == "closed" then
+				client.destroy()
+				on_disconnect()
 			end
 		end
 	end
