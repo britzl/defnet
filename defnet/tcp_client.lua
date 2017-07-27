@@ -5,13 +5,19 @@
 -- local PORT = 9189
 -- 
 -- function init(self)
--- 	self.client = tcp_client.create(IP, PORT, function(data)
--- 		print("TCP client received data " .. data)
--- 	end
+--	self.client = tcp_client.create(IP, PORT, function(data)
+--		print("TCP client received data " .. data)
+--	end,
+--	function()
+--		print("On disconnected")
+--		self.client = nil
+--	end)
 -- end
 -- 
 -- function update(self, dt)
--- 	self.client.update()
+--	if self.client
+--		self.client.update()
+--	end
 -- end
 -- 
 -- function on_input(self, action_id, action)
