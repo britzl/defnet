@@ -2,7 +2,7 @@ local flow = require "ludobits.m.flow"
 local p2p_discovery = require "defnet.p2p_discovery"
 local udp = require "defnet.udp"
 
-local trickle = require "multiplayer.trickle"
+local trickle = require "examples.multiplayer.trickle"
 
 local M = {}
 

@@ -1,7 +1,7 @@
 local input = require "ludobits.m.input"
 local flow = require "ludobits.m.flow"
-local multiplayer = require "multiplayer.multiplayer"
-local trickle = require "multiplayer.trickle"
+local multiplayer = require "examples.multiplayer.multiplayer"
+local trickle = require "examples.multiplayer.trickle"
 
 local LEFT = hash("left")
 local RIGHT = hash("right")
