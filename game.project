@@ -1,16 +1,13 @@
 [project]
 title = DefNet
 version = 0.1
-dependencies =
-branch = unknown
-commit = unknown
-build = unknown
+dependencies = https://github.com/britzl/ludobits/archive/master.zip
 
 [bootstrap]
-main_collection =
+main_collection = /examples/http_server/http_server.collectionc
 
 [input]
-game_binding =
+game_binding = /input/game.input_bindingc
 
 [display]
 width = 640
@@ -33,3 +30,4 @@ bundle_identifier = com.defold.defnet
 
 [ios]
 bundle_identifier = com.defold.defnet
+
