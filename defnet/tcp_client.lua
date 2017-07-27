@@ -6,7 +6,8 @@
 -- 
 -- function init(self)
 -- 	self.client = tcp_client.create(IP, PORT, function(data)
--- 	print("TCP client received data " .. data)
+-- 		print("TCP client received data " .. data)
+-- 	end
 -- end
 -- 
 -- function update(self, dt)
