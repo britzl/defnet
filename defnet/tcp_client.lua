@@ -95,7 +95,7 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		end
 
 		if receivet[client_socket] then
-			while true do
+			while client_socket do
 				local data, err = client_socket:receive(client.pattern or "*l")
 				if data then
 					local response = on_data(data)
