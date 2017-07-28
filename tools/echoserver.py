@@ -1,6 +1,7 @@
 # Example of simple echo server
 # www.solusipse.net
 # https://gist.github.com/solusipse/6419144
+# Modifed by britzl (https://github.com/britzl)
 
 import socket
 
@@ -10,26 +11,21 @@ def listen():
     connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     connection.bind(('0.0.0.0', 5555))
     connection.listen(10)
-    print "Waiting for connection"
     while True:
+        print "Waiting for connection"
         current_connection, address = connection.accept()
         print "Client connection " + str(address)
         while True:
             data = current_connection.recv(2048)
+            if data != "":
+                current_connection.send(data)
+                print data
 
-            if data == 'quit\r\n':
+            else:
+                print "Client disconnected " + str(address)
                 current_connection.shutdown(1)
                 current_connection.close()
                 break
-
-            elif data == 'stop\r\n':
-                current_connection.shutdown(1)
-                current_connection.close()
-                exit()
-
-            elif data:
-                current_connection.send(data)
-                print data
 
 
 if __name__ == "__main__":
