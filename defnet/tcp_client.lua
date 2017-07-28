@@ -3,7 +3,7 @@
 -- local tcp_client = require "defnet.tcp_client"
 -- local IP = "localhost" -- perhaps get IP from P2P discovery?
 -- local PORT = 9189
--- 
+--
 -- function init(self)
 --	self.client = tcp_client.create(IP, PORT, function(data)
 --		print("TCP client received data " .. data)
@@ -13,13 +13,13 @@
 --		self.client = nil
 --	end)
 -- end
--- 
+--
 -- function update(self, dt)
 --	if self.client
 --		self.client.update()
 --	end
 -- end
--- 
+--
 -- function on_input(self, action_id, action)
 -- 	-- on some condition do:
 -- 	self.client.send("Sending this to the server\n")
@@ -44,17 +44,17 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 	assert(server_port, "You must provide a server_port")
 	assert(on_data, "You must provide an on_data callback function")
 	assert(on_disconnect, "You must provide an on_disconnect callback function")
-	
+
 	print("Creating TCP client", server_ip, server_port)
-	
+
 	local client = {
 		pattern = "*l",
 	}
-	
+
 	local client_socket = nil
 	local send_queue = nil
 	local client_socket_table = nil
-	
+
 	local ok, err = pcall(function()
 		client_socket = socket.tcp()
 		assert(client_socket:connect(server_ip, server_port))
@@ -66,14 +66,14 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		print("tcp_client.create() error", err)
 		return nil, ("Unable to connect to %s:%d"):format(server_ip, server_port)
 	end
-	
+
 	--- Send data to the server. This function will add the data to a send queue
 	-- and the data will be sent when the @{update} function is called
 	-- @param data
 	function client.send(data)
 		send_queue.add(data)
 	end
-	
+
 	--- Call this as often as possible. The function will do two things:
 	--  1. Send data that has been added to the send queue using @{send}
 	--  2. Receive data
@@ -81,7 +81,7 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		if not client_socket then
 			return
 		end
-		
+
 		-- check if the socket is ready for reading and/or writing
 		local receivet, sendt = socket.select(client_socket_table, client_socket_table, 0)
 
@@ -95,15 +95,19 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		end
 
 		if receivet[client_socket] then
-			local data, err = client_socket:receive(client.pattern or "*l")
-			if data then
-				local response = on_data(data)
-				if response then
-					client.send(response)
+			while true do
+				local data, err = client_socket:receive(client.pattern or "*l")
+				if data then
+					local response = on_data(data)
+					if response then
+						client.send(response)
+					end
+				elseif err == "closed" then
+					client.destroy()
+					on_disconnect()
+				else
+					break
 				end
-			elseif err == "closed" then
-				client.destroy()
-				on_disconnect()
 			end
 		end
 	end
@@ -117,7 +121,7 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 			client_socket = nil
 		end
 	end
-	
+
 	return client
 end
 
