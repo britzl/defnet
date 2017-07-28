@@ -29,10 +29,7 @@ function on_input(self, action_id, action)
 	end
 	
 	if gui.pick_node(self.connect, action.x, action.y) and gui.is_enabled(self.connect) then
-		gui.set_enabled(self.connect, false)
-		gui.set_enabled(self.send, true)
-
-		self.client = tcp_client.create("127.0.0.1", SERVER_PORT,
+		local client, err = tcp_client.create("127.0.0.1", SERVER_PORT,
 			function(data)
 				print(data)
 				gui.set_text(gui.get_node("data"), tostring(data))
@@ -42,6 +39,14 @@ function on_input(self, action_id, action)
 				gui.set_enabled(self.connect, true)
 				gui.set_enabled(self.send, false)
 			end)
+
+		if client then
+			self.client = client
+			gui.set_enabled(self.connect, false)
+			gui.set_enabled(self.send, true)
+		else
+			gui.set_text(gui.get_node("data"), err)
+		end
 	elseif gui.pick_node(self.send, action.x, action.y) and gui.is_enabled(self.send) then
 		self.client.send("foobar " .. tostring(os.time()) .. "\r\n")
 	end
