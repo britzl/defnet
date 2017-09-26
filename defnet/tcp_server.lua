@@ -83,13 +83,15 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 	function server.start()
 		print("Starting TCP server on port " .. port)
 		local ok, err = pcall(function()
-			server_socket = assert(socket.bind("*", port))
+			local skt, err = socket.bind("*", port)
+			assert(skt, err)
+			server_socket = skt
+			server_socket:settimeout(0)
 		end)
 		if not server_socket or err then
 			print("Unable to start TCP server", err)
 			return false, err
 		end
-		server_socket:settimeout(0)
 		return true
 	end
 
