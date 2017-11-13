@@ -1,4 +1,4 @@
---- Async websocket client based on standard Lua coroutines. Requires the 
+--- Async websocket client based on standard Lua coroutines. Requires the
 -- lua-websocket library (https://github.com/lipp/lua-websockets)
 --
 -- Copyright (c) 2012 by Björn Ritzl <bjorn.ritzl@king.com>
@@ -9,10 +9,10 @@
 -- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 -- copies of the Software, and to permit persons to whom the Software is
 -- furnished to do so, subject to the following conditions:
--- 
+--
 -- The above copyright notice and this permission notice shall be included in
 -- all copies or substantial portions of the Software.
--- 
+--
 -- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 -- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 -- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,7 +31,7 @@
 -- 		wsc:send("Foobar")
 -- 	end)
 -- 	wsc:connect("ws://echo.websocket.org", "echo")
--- 
+--
 -- 	print("Calling step function frequently to update the async websocket")
 -- 	while true do
 -- 		wsc.step()
@@ -49,22 +49,18 @@ local new = function(emscripten)
 		assert(coroutine.running(), "You must call the connect function from a coroutine")
 		self.sock = socket.tcp()
 		self.sock:settimeout(0)
-		local success,err = self.sock:connect(host,port)
-		if err ~= "timeout" then
-			self.sock:close()
-			return nil, err
-		else
-			local sendt = { self.sock }
-			while true do
-				local receive_ready, send_ready, err = socket.select(nil, sendt, 0)
-				if err == "timeout" then
-					coroutine.yield()
-				elseif err then
-					self.sock:close()
-					return nil, err
-				elseif #send_ready == 1 then
-					return
-				end
+		self.sock:connect(host,port)
+		local sendt = { self.sock }
+		-- start polling for successful connection or error
+		while true do
+			local receive_ready, send_ready, err = socket.select(nil, sendt, 0)
+			if err == "timeout" then
+				coroutine.yield()
+			elseif err then
+				self.sock:close()
+				return nil, err
+			elseif #send_ready == 1 then
+				return
 			end
 		end
 	end
@@ -86,7 +82,7 @@ local new = function(emscripten)
 			end
 			i = i + bytes_sent
 			sent = sent + bytes_sent
-		end 
+		end
 		return sent
 	end
 
@@ -107,9 +103,9 @@ local new = function(emscripten)
 		self.sock:shutdown()
 		self.sock:close()
 	end
-	
+
 	self = sync.extend(self)
-	
+
 	local coroutines = {}
 
 	local sync_connect = self.connect
@@ -119,8 +115,8 @@ local new = function(emscripten)
 
 	local on_connected_fn
 	local on_message_fn
-	
-	
+
+
 	self.connect = function(...)
 		local co = coroutine.create(function(self, ws_url, ws_protocol)
 			if emscripten then
@@ -136,7 +132,7 @@ local new = function(emscripten)
 		coroutines[co] = true
 		coroutine.resume(co, ...)
 	end
-	
+
 	self.send = function(...)
 		local co = coroutine.create(function(...)
 			if emscripten then
@@ -148,7 +144,7 @@ local new = function(emscripten)
 		coroutines[co] = true
 		coroutine.resume(co, ...)
 	end
-	
+
 	self.receive = function(...)
 		local co = coroutine.create(function(...)
 			if emscripten then
@@ -162,7 +158,7 @@ local new = function(emscripten)
 		coroutines[co] = true
 		coroutine.resume(co, ...)
 	end
-	
+
 	self.close = function(...)
 		if emscripten then
 			self.sock_close(...)
@@ -172,7 +168,7 @@ local new = function(emscripten)
 		end
 	end
 
-	
+
 	self.step = function(self)
 		for co,_ in pairs(coroutines) do
 			if co and coroutine.status(co) == "suspended" then
@@ -180,7 +176,7 @@ local new = function(emscripten)
 			end
 		end
 	end
-	
+
 	self.on_message = function(self, fn)
 		on_message_fn = fn
 		local co = coroutine.create(function()
@@ -213,11 +209,11 @@ local new = function(emscripten)
 		end)
 		coroutines[co] = true
 	end
-	
+
 	self.on_connected = function(self, fn)
 		on_connected_fn = fn
 	end
-	
+
 	return self
 end
 
