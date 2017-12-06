@@ -6,16 +6,18 @@ I often get questions about networking in Defold from our forum users. Sometimes
 
 Luckily for us Defold comes bundles with the excellent [LuaSocket](http://w3.impa.br/~diego/software/luasocket/home.html) library. With LuaSocket it is fairly trivial to create TCP and UDP sockets. Here's a bare-bones TCP socket example:
 
-	local client = socket.tcp()
-	client:connect(server_ip, server_port)
-	client:settimeout(0) -- non blocking socket
-	client:send(data) -- send data like this
-	local response = client:receive(*l) -- receive a "line" of data like this
+```
+local client = socket.tcp()
+client:connect(server_ip, server_port)
+client:settimeout(0) -- non blocking socket
+client:send(data) -- send data like this
+local response = client:receive("*l") -- receive a "line" of data like this
+```
 
 The above snippet of code, some reading of the LuaSocket documentation and perhaps a couple of Google searches will get you quite far, but some concepts like peer to peer discovery is a bit trickier. The goal with this project is to collect some useful Lua networking modules that can be used either as-is or modified to suit your needs.
 
 ## Requirements
-Most of the code can be used in a stand-alone version of Lua with the only requirement being LuaSocket. In the modules provided here I `require("builtins.scripts.socket")` which is equivalent to [socket.lua from the LuaSocket library](https://github.com/diegonehab/luasocket/blob/master/src/socket.lua).
+
 
 ## Installation
 You can use the modules from this project in your own project by adding this project as a [Defold library dependency](http://www.defold.com/manuals/libraries/). Open your game.project file and in the `dependencies` field under `project` add:
@@ -23,6 +25,10 @@ You can use the modules from this project in your own project by adding this pro
 	https://github.com/britzl/defnet/archive/master.zip
 
 Or point to the ZIP file of a [specific release](https://github.com/britzl/defnet/releases).
+
+DefNet also depends on additional files from the LuaSocket repository, not currently provided by Defold. In order to use DefNet properly you need to add a dependency to the defold-luasocket library project as well:
+
+	https://github.com/britzl/defold-luasocket/archive/0.11.zip
 
 ## Included modules
 ### Peer to peer discovery

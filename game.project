@@ -1,7 +1,7 @@
 [project]
 title = DefNet
 version = 0.1
-dependencies = https://github.com/britzl/ludobits/archive/master.zip
+dependencies = https://github.com/britzl/ludobits/archive/master.zip, https://github.com/britzl/defold-luasocket/archive/master.zip
 
 [bootstrap]
 main_collection = /examples/http_server/http_server.collectionc
@@ -30,4 +30,3 @@ bundle_identifier = com.defold.defnet
 
 [ios]
 bundle_identifier = com.defold.defnet
-

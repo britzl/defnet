@@ -1,7 +1,7 @@
 --- Module to perform peer-to-peer discovery
 -- The module can either broadcast it's existence or listen for others
 
-local socket = require "builtins.scripts.socket"
+local socket = require "socket.socket"
 
 local M = {}
 

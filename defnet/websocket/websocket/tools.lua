@@ -158,7 +158,6 @@ local sha1_wiki = function(msg)
 end
 
 local base64_encode = function(data)
-  local mime = require'defnet.socket.mime'
   return (mime.b64(data))
 end
 

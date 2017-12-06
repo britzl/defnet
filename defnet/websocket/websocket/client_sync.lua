@@ -1,4 +1,4 @@
-local socket = require'builtins.scripts.socket'
+local socket = require'socket.socket'
 local sync = require'defnet.websocket.websocket.sync'
 local tools = require'defnet.websocket.websocket.tools'
 

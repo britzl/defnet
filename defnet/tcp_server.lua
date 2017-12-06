@@ -31,7 +31,7 @@
 --	end
 --
 
-local socket = require "builtins.scripts.socket"
+local socket = require "socket.socket"
 local tcp_send_queue = require "defnet.tcp_send_queue"
 
 local M = {}
