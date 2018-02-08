@@ -121,7 +121,7 @@ local new = function(emscripten)
 		local co = coroutine.create(function(self, ws_url, ws_protocol)
 			if emscripten then
   				local protocol, host, port, uri = tools.parse_url(ws_url)
-				self.sock_connect(self, host, port)
+				self.sock_connect(self, host .. uri, port)
 				self.state = "OPEN"
 				if on_connected_fn then on_connected_fn(ok, err) end
 			else
