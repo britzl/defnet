@@ -159,7 +159,7 @@ The module will simply forward any incoming data to a callback function. Example
 ### HTTP server
 Since it's possible to create a TCP socket it's also possible to build more advanced things such as HTTP servers. The `defnet/http_server` module can be used to create a simple HTTP server with basic page routing support. Example:
 
-	local http_sever = require "defnet/http_sever"
+	local http_sever = require "defnet.http_server"
 	local PORT = 9189
 
 	function init(self)
