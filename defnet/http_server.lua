@@ -151,9 +151,7 @@ function M.create(port)
 			end
 			
 			local headers = parse_headers(request)
-			print("JHJHKHJKJHJH")
 			local message_body = receive_message_body(conn, method, headers)
-			print(method, message_body)
 
 			-- function for streaming chunked content
 			local stream_fn = function(response, close)
