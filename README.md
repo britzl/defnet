@@ -104,32 +104,32 @@ The `defnet/tcp_server` module can be used to create a TCP socket server that ac
 ## TCP socket client
 The `defnet/tcp_client` module can be used to create a TCP socket client and connect it. Example:
 
-	```
-	local tcp_client = require "defnet.tcp_client"
-	local IP = "localhost" -- perhaps get IP from P2P discovery?
-	local PORT = 9189
+```
+local tcp_client = require "defnet.tcp_client"
+local IP = "localhost" -- perhaps get IP from P2P discovery?
+local PORT = 9189
 
-	function init(self)
-		self.client = tcp_client.create(IP, PORT, function(data)
-			print("TCP client received data " .. data)
-		end,
-		function()
-			print("On disconnected")
-			self.client = nil
-		end)
-	end
+function init(self)
+	self.client = tcp_client.create(IP, PORT, function(data)
+		print("TCP client received data " .. data)
+	end,
+	function()
+		print("On disconnected")
+		self.client = nil
+	end)
+end
 
-	function update(self, dt)
-		if self.client then
-			self.client.update()
-		end
+function update(self, dt)
+	if self.client then
+		self.client.update()
 	end
+end
 
-	function on_input(self, action_id, action)
-		-- on some condition do:
-		self.client.send("Sending this to the server\n")
-	end
-	```
+function on_input(self, action_id, action)
+	-- on some condition do:
+	self.client.send("Sending this to the server\n")
+end
+```
 
 
 ## UDP client
@@ -137,69 +137,69 @@ The `defnet/udp` module can be used to create an UDP connection. The connection 
 
 The module will simply forward any incoming data to a callback function. Example:
 
-	```
-	local udp = require "defnet.udp"
+```
+local udp = require "defnet.udp"
 
-	function init(self)
-		self.udp_server = udp.create(function(data, ip, port)
-			print("Received data", data, ip, port)
-		end, 9999)
+function init(self)
+	self.udp_server = udp.create(function(data, ip, port)
+		print("Received data", data, ip, port)
+	end, 9999)
 
-		self.udp1 = udp.create(function(data, ip, port)
-			print("Received data", data, ip, port)
-		end, nil, "127.0.0.1", 9999)
-		self.udp1.send("foobar to server")
+	self.udp1 = udp.create(function(data, ip, port)
+		print("Received data", data, ip, port)
+	end, nil, "127.0.0.1", 9999)
+	self.udp1.send("foobar to server")
 
-		self.udp2 = udp.create(function(data, ip, port)
-			print("Received data", data, ip, port)
-		end)
-		self.udp2.send("foobar to server", "127.0.0.1", 9990)
-	end
+	self.udp2 = udp.create(function(data, ip, port)
+		print("Received data", data, ip, port)
+	end)
+	self.udp2.send("foobar to server", "127.0.0.1", 9990)
+end
 
-	function final(self)
-		self.udp_server.destroy()
-		self.udp1.destroy()
-		self.udp2.destroy()
-	end
+function final(self)
+	self.udp_server.destroy()
+	self.udp1.destroy()
+	self.udp2.destroy()
+end
 
-	function update(self, dt)
-		self.udp_server.update()
-		self.udp1.update()
-		self.udp2.update()
-	end
-	```
+function update(self, dt)
+	self.udp_server.update()
+	self.udp1.update()
+	self.udp2.update()
+end
+```
 
 
 ## HTTP server
 Since it's possible to create a TCP socket it's also possible to build more advanced things such as HTTP servers. The `defnet/http_server` module can be used to create a simple HTTP server with basic page routing support. Example:
 
-	```
-	local http_sever = require "defnet.http_server"
-	local PORT = 9189
+```
+local http_sever = require "defnet.http_server"
+local PORT = 9189
 
-	function init(self)
-		self.hs = http_server.create(PORT)
-		self.hs.router.get("/foo/(.*)$", function(matches)
-			return self.http_server.html("boo" .. matches[1])
-		end)
-		self.hs.router.get("^/$", function()
-			return self.http_server.html("Hello World")
-		end)
-		self.hs.router.get("^/stream$", function(matches, stream)
-			return function()
-				stream("some data")
-			end
-		end)
-		self.hs.router.unhandled(function(method, uri)
-			return self.http_server.html("Oops, couldn't find that one!", http_server.NOT_FOUND)
-		end)
-		self.hs.start()
-	end
+function init(self)
+	self.hs = http_server.create(PORT)
+	self.hs.router.get("/foo/(.*)$", function(matches)
+		return self.http_server.html("boo" .. matches[1])
+	end)
+	self.hs.router.get("^/$", function()
+		return self.http_server.html("Hello World")
+	end)
+	self.hs.router.get("^/stream$", function(matches, stream)
+		return function()
+			stream("some data")
+		end
+	end)
+	self.hs.router.unhandled(function(method, uri)
+		return self.http_server.html("Oops, couldn't find that one!", http_server.NOT_FOUND)
+	end)
+	self.hs.start()
+end
 
-	function update(self, dt)
-		self.hs.update()
-	end
-	```
+function update(self, dt)
+	self.hs.update()
+end
+```
 
 
 ## WebSockets
