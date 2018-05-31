@@ -34,37 +34,37 @@ DefNet also depends on additional files from the LuaSocket repository, not curre
 ## Peer to peer discovery
 The `defnet/p2p_discovery` module can be used to perform peer to peer discovery using UDP sockets. The basic idea is that an app sets itself up as discoverable and starts sending a broadcast message on the network. Other clients can listen for broadcasted messages and get the IP of the app that wishes to be discovered. This is how an app can set itself up as discoverable:
 
-	```
-	local p2p_discovery = require "defnet.p2p_discovery"
-	local PORT = 50000
+```
+local p2p_discovery = require "defnet.p2p_discovery"
+local PORT = 50000
 
-	function init(self)
-		self.p2p = p2p_discovery.create(PORT)
-		self.p2p.broadcast("findme")
-	end
+function init(self)
+	self.p2p = p2p_discovery.create(PORT)
+	self.p2p.broadcast("findme")
+end
 
-	function update(self, dt)
-		self.p2p.update()
-	end
-	```
+function update(self, dt)
+	self.p2p.update()
+end
+```
 
 And this is how another app would discover it:
 
-	```
-	local p2p_discovery = require "defnet.p2p_discovery"
-	local PORT = 50000
+```
+local p2p_discovery = require "defnet.p2p_discovery"
+local PORT = 50000
 
-	function init(self)
-		self.p2p = p2p_discovery.create(PORT)
-		self.p2p.listen("findme", function(ip, port)
-			print("Found server", ip, port)
-		end)
-	end
+function init(self)
+	self.p2p = p2p_discovery.create(PORT)
+	self.p2p.listen("findme", function(ip, port)
+		print("Found server", ip, port)
+	end)
+end
 
-	function update(self, dt)
-		self.p2p.update()
-	end
-	```
+function update(self, dt)
+	self.p2p.update()
+end
+```
 
 Once discovery has been completed communication can take place over a socket of some kind.
 
@@ -72,33 +72,33 @@ Once discovery has been completed communication can take place over a socket of 
 ## TCP socket server
 The `defnet/tcp_server` module can be used to create a TCP socket server that accepts incoming TCP client connections and can send and receive data. Example:
 
-	```
-	local function on_data(data, ip)
-		print("Received", data, "from", ip)
-		return "My response"
-	end
+```
+local function on_data(data, ip)
+	print("Received", data, "from", ip)
+	return "My response"
+end
 
-	local function on_client_connected(ip)
-		print("Client", ip, "connected")
-	end
+local function on_client_connected(ip)
+	print("Client", ip, "connected")
+end
 
-	local function on_client_disconnected(ip)
-		print("Client", ip, "disconnected")
-	end
+local function on_client_disconnected(ip)
+	print("Client", ip, "disconnected")
+end
 
-	function init(self)
-		self.server = tcp_server.create(8190, on_data, on_client_connected, on_client_disconnected)
-		self.server.start()
-	end
+function init(self)
+	self.server = tcp_server.create(8190, on_data, on_client_connected, on_client_disconnected)
+	self.server.start()
+end
 
-	function final(self)
-		self.server.stop()
-	end
+function final(self)
+	self.server.stop()
+end
 
-	function update(self, dt)
-		self.server.update()
-	end
-	```
+function update(self, dt)
+	self.server.update()
+end
+```
 
 
 ## TCP socket client
