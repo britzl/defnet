@@ -3,17 +3,27 @@ local dirtylarry = require "gooey.themes.dirtylarry.dirtylarry"
 
 local TCP_SERVER_PORT = 5555
 
+local function on_data(data, ip, port, client)
+	print("TCP server received data '" .. data .. "' from " .. ip .. ":" .. port)
+	local logo = gui.get_node("logo")
+	gui.animate(logo, "rotation.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
+end
+
+local function on_client_connected(ip, port, client)
+	print("Client connected from " .. ip .. ":" .. port)
+end
+
+local function on_client_disconnected(ip, port, client)
+	print("Client discconnected from " .. ip .. ":" .. port)
+end
+
 function init(self)
 	msg.post(".", "acquire_input_focus")
 
-	local logo = gui.get_node("logo")
 	dirtylarry.set_enabled(dirtylarry.button("stop"), false)
 	dirtylarry.set_enabled(dirtylarry.button("broadcast"), false)
 		
-	self.tcp_server = tcp_server.create(TCP_SERVER_PORT, function(data, ip, port)
-		print("TCP server received data '" .. data .. "' from " .. ip .. ":" .. port)
-		gui.animate(logo, "rotation.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
-	end)
+	self.tcp_server = tcp_server.create(TCP_SERVER_PORT, on_data, on_client_connected, on_client_disconnected)
 end
 
 function final(self)

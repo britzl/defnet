@@ -4,16 +4,16 @@
 --
 -- @usage
 --
---	local function on_data(data, ip)
+--	local function on_data(data, ip, port, client)
 --		print("Received", data, "from", ip)
 --		return "My response"
 --	end
 --	
---	local function on_client_connected(ip)
+--	local function on_client_connected(ip, port, client)
 --		print("Client", ip, "connected")
 --	end
 --	
---	local function on_client_disconnected(ip)
+--	local function on_client_disconnected(ip, port, client)
 --		print("Client", ip, "disconnected")
 --	end
 --	
@@ -69,7 +69,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 				queues[connection_to_remove] = nil
 				if on_client_disconnected then
 					local client_ip, client_port = connection:getsockname()
-					on_client_disconnected(client_ip, client_port)
+					on_client_disconnected(client_ip, client_port, connection)
 				end
 				break
 			end
@@ -144,7 +144,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			queues[client] = tcp_send_queue.create(client, M.TCP_SEND_CHUNK_SIZE)
 			if on_client_connected then
 				local client_ip, client_port = client:getsockname()
-				on_client_connected(client_ip, client_port)
+				on_client_connected(client_ip, client_port, client)
 			end
 		end
 		
@@ -155,7 +155,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 				local data, err = server.receive(client)
 				if data and on_data then
 					local client_ip, client_port = client:getsockname()
-					local response = on_data(data, client_ip, client_port, function(response)
+					local response = on_data(data, client_ip, client_port, client, function(response)
 						if not queues[client] then
 							return false
 						end

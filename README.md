@@ -73,16 +73,16 @@ Once discovery has been completed communication can take place over a socket of 
 The `defnet/tcp_server` module can be used to create a TCP socket server that accepts incoming TCP client connections and can send and receive data. Example:
 
 ```
-local function on_data(data, ip)
+local function on_data(data, ip, port, client)
 	print("Received", data, "from", ip)
 	return "My response"
 end
 
-local function on_client_connected(ip)
+local function on_client_connected(ip, port, client)
 	print("Client", ip, "connected")
 end
 
-local function on_client_disconnected(ip)
+local function on_client_disconnected(ip, port, client)
 	print("Client", ip, "disconnected")
 end
 
