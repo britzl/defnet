@@ -30,10 +30,11 @@ DefNet also depends on additional files from the LuaSocket repository, not curre
 
 	https://github.com/britzl/defold-luasocket/archive/0.11.zip
 
-## Included modules
-### Peer to peer discovery
+
+## Peer to peer discovery
 The `defnet/p2p_discovery` module can be used to perform peer to peer discovery using UDP sockets. The basic idea is that an app sets itself up as discoverable and starts sending a broadcast message on the network. Other clients can listen for broadcasted messages and get the IP of the app that wishes to be discovered. This is how an app can set itself up as discoverable:
 
+	```
 	local p2p_discovery = require "defnet.p2p_discovery"
 	local PORT = 50000
 
@@ -45,9 +46,11 @@ The `defnet/p2p_discovery` module can be used to perform peer to peer discovery 
 	function update(self, dt)
 		self.p2p.update()
 	end
+	```
 
 And this is how another app would discover it:
 
+	```
 	local p2p_discovery = require "defnet.p2p_discovery"
 	local PORT = 50000
 
@@ -61,12 +64,15 @@ And this is how another app would discover it:
 	function update(self, dt)
 		self.p2p.update()
 	end
+	```
 
 Once discovery has been completed communication can take place over a socket of some kind.
 
-### TCP socket server
+
+## TCP socket server
 The `defnet/tcp_server` module can be used to create a TCP socket server that accepts incoming TCP client connections and can send and receive data. Example:
 
+	```
 	local function on_data(data, ip)
 		print("Received", data, "from", ip)
 		return "My response"
@@ -92,10 +98,13 @@ The `defnet/tcp_server` module can be used to create a TCP socket server that ac
 	function update(self, dt)
 		self.server.update()
 	end
+	```
 
-### TCP socket client
+
+## TCP socket client
 The `defnet/tcp_client` module can be used to create a TCP socket client and connect it. Example:
 
+	```
 	local tcp_client = require "defnet.tcp_client"
 	local IP = "localhost" -- perhaps get IP from P2P discovery?
 	local PORT = 9189
@@ -120,12 +129,15 @@ The `defnet/tcp_client` module can be used to create a TCP socket client and con
 		-- on some condition do:
 		self.client.send("Sending this to the server\n")
 	end
+	```
 
-### UDP client
+
+## UDP client
 The `defnet/udp` module can be used to create an UDP connection. The connection can either be unconnected and send and receive data from any IP and port or connected and bound to a specific port and/or send only to a specific IP and port.
 
 The module will simply forward any incoming data to a callback function. Example:
 
+	```
 	local udp = require "defnet.udp"
 
 	function init(self)
@@ -155,11 +167,14 @@ The module will simply forward any incoming data to a callback function. Example
 		self.udp1.update()
 		self.udp2.update()
 	end
+	```
 
-### HTTP server
+
+## HTTP server
 Since it's possible to create a TCP socket it's also possible to build more advanced things such as HTTP servers. The `defnet/http_server` module can be used to create a simple HTTP server with basic page routing support. Example:
 
-	local http_sever = require "defnet/http_sever"
+	```
+	local http_sever = require "defnet.http_server"
 	local PORT = 9189
 
 	function init(self)
@@ -184,20 +199,22 @@ Since it's possible to create a TCP socket it's also possible to build more adva
 	function update(self, dt)
 		self.hs.update()
 	end
+	```
 
-### WebSockets
-WebSocket connections are possible using the [lua-websocket](https://github.com/lipp/lua-websockets) project. There is however a couple of things to keep in mind when using a WebSocket in Defold. Please refer to the [README](defnet/websocket/README.md) for more details.
+
+## WebSockets
+The WebSocket implementation for Defold has been [moved to a separate project](https://github.com/britzl/defold-websocket).
+
 
 ## Example
 There's a few example projects in the examples folder.
+
 
 ## Found a bug? Made an improvement?
 There are probably bugs. Please report them!
 
 Did you improve some of the code? Please create a Pull Request!
 
-## License
-This library is released under the same [Terms and Conditions as the Defold editor and service itself](http://www.defold.com/about-terms/).
 
 ## Credits
 Assets in the example project are made by [Kenney](http://www.kenney.nl)

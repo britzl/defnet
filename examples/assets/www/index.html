@@ -1,0 +1,50 @@
+<html>
+<head>
+	<title>DefNet</title>
+	<script>
+		function post(postData) {
+			var url = "http://localhost:9190/handlepost";
+			var method = "POST";
+
+			var shouldBeAsync = true;
+			var request = new XMLHttpRequest();
+			request.onload = function () {
+				console.log("Response: ", request.response);
+			}
+			request.onreadystatechange = function() {//Call a function when the state changes.
+				if(request.readyState == XMLHttpRequest.DONE && request.status == 200) {
+					console.log("DONE, 200 OK")
+				}
+			}
+			request.open(method, url, shouldBeAsync);
+			request.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");
+			request.send(postData);
+		}
+	</script>
+</head>
+<body>
+</body>
+	<p>Welcome to the DefNet HTTP server</p>
+	<a href="/logo">Return file logo.png</a></br>
+	<a href="/lorem">Lorem Ipsum stream</a></br>
+	<a href="/foo/bar">foo/bar</a></br>
+	<a href="/foo/far">foo/far</a></br>
+	<a href="/foo/xyz">foo/xyz</a></br>
+	<a href="/unhandledpage">404</a></br>
+
+	<p>
+		<form action="javascript: post(document.getElementById('posttext').value)" method="post">
+			<legend>POST data</legend>
+			<input id="posttext" type="text"/></br>
+			<input type="submit"/></br>
+		</form>
+	</p>
+
+	<p>
+		<form action="/handleform" method="post">
+			<legend>Form data</legend>
+			<input id="formtext" type="text"/></br>
+			<input type="submit"/></br>
+		</form>
+	</p>
+</html>

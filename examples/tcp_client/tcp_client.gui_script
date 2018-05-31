@@ -1,14 +1,12 @@
 local tcp_client = require "defnet.tcp_client"
+local dirtylarry = require "gooey.themes.dirtylarry.dirtylarry"
+
 
 local SERVER_PORT = 5555
 
 function init(self)
 	msg.post(".", "acquire_input_focus")
-	msg.post("@render:", "clear_color", { color = vmath.vector4(0.4, 0.5, 0.8, 1.0) })
-
-	self.connect = gui.get_node("connect/button")
-	self.send = gui.get_node("send/button")
-	gui.set_enabled(self.send, false)
+	dirtylarry.set_enabled(dirtylarry.button("send"), false)
 end
 
 function final(self)
@@ -24,32 +22,30 @@ function update(self, dt)
 end
 
 function on_input(self, action_id, action)
-	if not action.released then
-		return
-	end
-	
-	if gui.pick_node(self.connect, action.x, action.y) and gui.is_enabled(self.connect) then
+	dirtylarry.button("send", action_id, action, function()
+		for i=math.random(1,3),1,-1 do
+			self.client.send("foobar " .. tostring(os.time() .. "_" .. i) .. "\r\n")
+		end
+	end)
+	dirtylarry.button("connect", action_id, action, function()
 		local client, err = tcp_client.create("127.0.0.1", SERVER_PORT,
 			function(data)
 				print(data)
-				gui.set_text(gui.get_node("data"), tostring(data))
+				local logo = gui.get_node("logo")
+				gui.animate(logo, "rotation.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
 			end,
 			function()
 				self.client = nil
-				gui.set_enabled(self.connect, true)
-				gui.set_enabled(self.send, false)
+				dirtylarry.set_enabled(dirtylarry.button("connect"), true)
+				dirtylarry.set_enabled(dirtylarry.button("send"), false)
 			end)
 
 		if client then
 			self.client = client
-			gui.set_enabled(self.connect, false)
-			gui.set_enabled(self.send, true)
+			dirtylarry.set_enabled(dirtylarry.button("connect"), false)
+			dirtylarry.set_enabled(dirtylarry.button("send"), true)
 		else
-			gui.set_text(gui.get_node("data"), err)
+			print(err)
 		end
-	elseif gui.pick_node(self.send, action.x, action.y) and gui.is_enabled(self.send) then
-		for i=math.random(1,3),1,-1 do
-			self.client.send("foobar " .. tostring(os.time() .. "_" .. i) .. "\r\n")
-		end
-	end
+	end)
 end

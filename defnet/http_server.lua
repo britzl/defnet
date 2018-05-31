@@ -6,19 +6,19 @@
 -- 
 --	function init(self)
 --		self.server = http_server.create(9190)
---		self.server.router.get("^/$", function()
+--		self.server.router.get("^/$", function(matches, stream, headers, body)
 --			return http_server.html("Hello World")
 --		end)
---		self.server.router.get("^/foo/(.*)$", function(matches)
+--		self.server.router.get("^/foo/(.*)$", function(matches, stream, headers, body)
 --			return http_server.html("bar" .. matches[1])
 --		end)
---		self.server.router.get("^/stream$", function(matches, stream)
+--		self.server.router.get("^/stream$", function(matches, stream, headers, body)
 --			return function()
 --				stream("some data")
 --			end
 --		end)
---		self.server.router.unhandled(function(method, uri)
---			return http_server.html("Oops, couldn't find that one!", 404)
+--		self.server.router.unhandled(function(method, uri, stream, headers, body)
+--			return http_server.html("Oops, couldn't find that one!", http_server.NOT_FOUND)
 --		end)
 --		self.server.start()
 --	end
@@ -40,6 +40,82 @@ local M = {}
 M.OK = "200 OK"
 M.NOT_FOUND = "404 Not Found"
 
+
+-- receive data on a socket, according to the provided pattern
+local function receive(conn, pattern)
+	local buf = ""
+	while true do
+		local data, err, partial = conn:receive(pattern, buf)
+		if err == "closed" then
+			return data, err
+		end
+		if partial and partial ~= "" then
+			buf = buf .. partial
+		elseif data then
+			return data, err
+		end
+	end
+end
+
+
+-- receive a line of data on a socket
+local function receive_line(conn)
+	return receive(conn, "*l")
+end
+
+
+-- receive the request part (line and headers)
+local function receive_request(conn)
+	assert(conn, "You must provide a connection")
+	local request = {}
+	local buf = ""
+	while true do
+		local line, err = receive_line(conn)
+		if err == "closed" or line == "" then
+			return request, err
+		end
+		request[#request + 1] = line
+	end
+end
+
+
+-- receive the message body
+local function receive_message_body(conn, method, headers)
+	assert(conn, "You must provide a connection")
+	assert(method, "You must provide a method")
+	assert(headers, "You must provide headers")
+
+	local body = nil
+	if method == "POST" or method == "PUT" then
+		local content_length = headers["content-length"] and tonumber(headers["content-length"]) or 0
+		if content_length > 0 then
+			body = receive(conn, content_length)
+		end
+	end
+	return body
+end
+
+
+-- parse the request line into method, uri and protocol
+local function parse_request_line(request_line)
+	assert(request_line, "You must provide a request line")
+	local method, uri, protocol_version = request_line:match("^(%S+)%s(%S+)%s(%S+)")
+	return method, uri, protocol_version
+end
+
+
+-- parse headers, splitting them into key value pairs
+local function parse_headers(request)
+	assert(request, "You must provide a request")
+	local headers = {}
+	for _,line in ipairs(request) do
+		local header, value = line:match("^(%S+):%s-(%S+)")
+		headers[header:lower()] = value
+	end
+	return headers
+end
+
+
 --- Create a new HTTP server
 -- @return Server instance
 function M.create(port)
@@ -54,69 +130,69 @@ function M.create(port)
 
 	local unhandled_route_fn = nil
 
-	local ss = tcp_server.create(port, function(data, ip, port, response_fn)
-		if not data or #data == 0 then
-			return
-		end
+	local ss = tcp_server.create(port, function() end)
+
+	-- Replace the underlying socket server's receive function
+	-- Read lines until end of request
+	function ss.receive(conn)
+		assert(conn, "You must provide a connection")
+
 		local ok, err = pcall(function()
-			local request_line = data[1] or ""
-			local method, uri, protocol_version = request_line:match("^(%S+)%s(%S+)%s(%S+)")
+			local request, err = receive_request(conn)
+			if err then
+				return
+			end
+
+			local request_line = table.remove(request, 1) or ""
+			local method, uri, protocol_version = parse_request_line(request_line)
 			local header_only = (method == "HEAD")
 			if header_only then
 				method = "GET"
 			end
+			
+			local headers = parse_headers(request)
+			print("JHJHKHJKJHJH")
+			local message_body = receive_message_body(conn, method, headers)
+			print(method, message_body)
+
+			-- function for streaming chunked content
+			local stream_fn = function(response, close)
+				ss.send(response, conn)
+				return close ~= false
+			end
+			
+			-- handle request and get a response
 			local response
 			if uri then
 				for _,route in ipairs(routes) do
 					if not route.method or route.method == method then
 						local matches = { uri:match(route.pattern) }
 						if next(matches) then
-							response = route.fn(matches, response_fn)
+							response = route.fn(matches, stream_fn, headers, message_body)
 							break
 						end
 					end
 				end
 			end
+
+			-- unhandled response
 			if not response and unhandled_route_fn then
-				response = unhandled_route_fn(method, uri, response_fn)
+				response = unhandled_route_fn(method, uri, stream_fn, headers, message_body)
 			end
+
+			-- send response
 			if response then
 				if type(response) == "function" then
 					table.insert(request_handlers, response)
 				else
-					response_fn(response)
+					stream_fn(response)
 				end
 			end
-			--[[if response then
-				if method == "HEAD" then
-					local s, e = response:find("\r\n\r\n")
-					if s and e then
-						response = response:sub(1, e)
-					end
-				end
-			end--]]
 		end)
 		if not ok then
 			print(err)
 		end
-	end)
-
-	-- Replace the underlying socket server's receive function
-	-- Read lines until end of request
-	function ss.receive(conn)
-		assert(conn, "You must provide a connection")
-		local request = {}
-		local buf = ""
-		while true do
-			local data, err, buf = conn:receive("*l", buf)
-			local closed = (err == "closed")
-			if closed or (err ~= "timeout" and (not data or data == "\r\n" or data == "")) then
-				return request, err
-			elseif data then
-				table.insert(request, data)
-				buf = ""
-			end
-		end
+		return true
 	end
 
 	instance.router = {}
@@ -192,7 +268,9 @@ function M.create(port)
 	function instance.update()
 		ss.update()
 		for k,handler in pairs(request_handlers) do
+			print("calling request handler")
 			if not handler() then
+				print("removing request handler")
 				request_handlers[k] = nil
 			end
 		end

@@ -1,10 +1,11 @@
 [project]
 title = DefNet
 version = 0.1
-dependencies = https://github.com/britzl/ludobits/archive/master.zip, https://github.com/britzl/defold-luasocket/archive/master.zip
+dependencies = https://github.com/britzl/defold-luasocket/archive/0.11.zip,https://github.com/britzl/gooey/archive/6.3.0.zip
+custom_resources = examples/assets/www/
 
 [bootstrap]
-main_collection = /examples/http_server/http_server.collectionc
+main_collection = /examples/examples.collectionc
 
 [input]
 game_binding = /input/game.input_bindingc
@@ -30,3 +31,4 @@ bundle_identifier = com.defold.defnet
 
 [ios]
 bundle_identifier = com.defold.defnet
+

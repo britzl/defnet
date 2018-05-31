@@ -113,9 +113,18 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		return client:receive("*l")
 	end
 	
-	function server.send(data)
+	function server.broadcast(data)
 		for client,queue in pairs(queues) do
 			queue.add(data)
+		end
+	end
+
+	function server.send(data, client)
+		for c,queue in pairs(queues) do
+			if c == client then
+				queue.add(data)
+				break
+			end
 		end
 	end
 	
@@ -158,7 +167,6 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 					end
 				end
 				if err and err == "closed" then
-					print("Client connection closed")
 					remove_client(client)
 				end
 			end)()
@@ -168,7 +176,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		local read, write, err = socket.select(nil, clients, 0)
 		for _,client in ipairs(write) do
 			coroutine.wrap(function()
-				queues[client].send()
+				local ok, err = queues[client].send()
 			end)()
 		end
 	end

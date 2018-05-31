@@ -1,10 +1,4 @@
 images {
-  image: "/examples/assets/images/green_button08.png"
-}
-images {
-  image: "/examples/assets/images/colored_shroom.png"
-}
-images {
   image: "/examples/assets/images/logo.png"
 }
 margin: 0

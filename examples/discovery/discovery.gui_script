@@ -1,0 +1,38 @@
+local p2p_discovery = require "defnet.p2p_discovery"
+local dirtylarry = require "gooey.themes.dirtylarry.dirtylarry"
+
+local P2P_PORT = 50000
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.p2p = p2p_discovery.create(P2P_PORT)
+end
+
+function final(self)
+	self.p2p.stop()
+end
+
+function update(self, dt)
+	self.p2p.update()
+end
+
+function on_input(self, action_id, action)
+	dirtylarry.button("broadcast", action_id, action, function()
+		print("Broadcasting")
+		dirtylarry.set_enabled(dirtylarry.button("broadcast"), false)
+		dirtylarry.set_enabled(dirtylarry.button("discover"), false)
+		self.p2p.broadcast("findme")
+	end)
+		
+	dirtylarry.button("discover", action_id, action, function()
+		print("Discovering")
+		dirtylarry.set_enabled(dirtylarry.button("broadcast"), false)
+		dirtylarry.set_enabled(dirtylarry.button("discover"), false)
+
+		self.p2p.listen("findme", function(ip, port)
+			print("Found server", ip, port)
+			local logo = gui.get_node("logo")
+			gui.animate(logo, gui.PROP_POSITION, gui.get_position(logo) + vmath.vector3(0, 100, 0), gui.EASING_INBOUNCE, 1, 0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+		end)
+	end)
+end

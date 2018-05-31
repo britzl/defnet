@@ -1,37 +1,45 @@
 local http_server = require "defnet.http_server"
+local dirtylarry = require "gooey.themes.dirtylarry.dirtylarry"
 
 local HTTP_SERVER_PORT = 9190
 
 function init(self)
 	msg.post(".", "acquire_input_focus")
-	msg.post("@render:", "clear_color", { color = vmath.vector4(0.4, 0.5, 0.8, 1.0) })
 
-	self.open_browser = gui.get_node("open_browser/button")
-	
 	self.http_server = http_server.create(HTTP_SERVER_PORT)
-	self.http_server.router.get("/foo/(.*)$", function(matches)
+	self.http_server.router.get("/foo/(.*)$", function(matches, stream, headers, body)
 		return self.http_server.html("boo" .. matches[1])
 	end)
-	self.http_server.router.get("/lorem$", function(matches, stream)
+	self.http_server.router.get("/lorem$", function(matches, stream, headers, body)
 		stream(self.http_server.html())
 		local chunks = { "Lorem ", "ipsum ", "dolor ", "sit ", "amet, ", "consectetur ", "adipiscing ", "elit." }
 		return function()
 			if #chunks > 0 then
 				return stream(self.http_server.to_chunk(table.remove(chunks, 1)))
 			else
-				return stream(self.http_server.to_chunk(""))
+				return stream(self.http_server.to_chunk(""), false)
 			end
 		end
 	end)
-	self.http_server.router.get("/$", function()
-		return self.http_server.html("Hello World")
+	self.http_server.router.post("/handleform$", function(matches, stream, headers, body)
+		if body then
+			return self.http_server.html("Got form data: " .. tostring(body))
+		else
+			return self.http_server.html("Got no form data. Using http?")
+		end
 	end)
-	self.http_server.router.get("^/logo$", function()
-		local f = io.open("assets/images/logo.png")
-		local data = f:read("*a")
+	self.http_server.router.post("/handlepost$", function(matches, stream, headers, body)
+		return self.http_server.html("Got post data: " .. tostring(body))
+	end)
+	self.http_server.router.get("/$", function(matches, stream, headers, body)
+		local index = sys.load_resource("/examples/assets/www/index.html")		
+		return self.http_server.html(index)
+	end)
+	self.http_server.router.get("^/logo$", function(matches, stream, headers, body)
+		local data = sys.load_resource("/examples/assets/www/logo.png")
 		return self.http_server.file(data, "logo.png")
 	end)
-	self.http_server.router.unhandled(function(method, uri)
+	self.http_server.router.unhandled(function(method, uri, stream, headers, body)
 		return self.http_server.html("Oops, couldn't find that one!", http_server.NOT_FOUND)
 	end)
 	self.http_server.start()
@@ -39,7 +47,6 @@ end
 
 function final(self)
 	msg.post(".", "release_input_focus")
-	
 	self.http_server.stop()
 end
 
@@ -48,13 +55,7 @@ function update(self, dt)
 end
 
 function on_input(self, action_id, action)
-	if gui.pick_node(self.open_browser, action.x, action.y) and action.released then
+	dirtylarry.button("open_browser", action_id, action, function()
 		sys.open_url("http://localhost:" .. HTTP_SERVER_PORT)
-	end
-end
-
-function on_reload(self)
-	print("onreload")
-    -- Add input-handling code here
-    -- Remove this function if not needed
+	end)
 end
