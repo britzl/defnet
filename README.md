@@ -214,7 +214,3 @@ There's a few example projects in the examples folder.
 There are probably bugs. Please report them!
 
 Did you improve some of the code? Please create a Pull Request!
-
-
-## Credits
-Assets in the example project are made by [Kenney](http://www.kenney.nl)
