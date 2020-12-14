@@ -77,6 +77,8 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 	--- Call this as often as possible. The function will do two things:
 	--  1. Send data that has been added to the send queue using @{send}
 	--  2. Receive data
+	local loaded_data = ""
+
 	function client.update()
 		if not client_socket then
 			return
@@ -96,9 +98,13 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 
 		if receivet[client_socket] then
 			while client_socket do
-				local data, err = client_socket:receive(client.pattern or "*l")
+				local data, err, partial = client_socket:receive(client.pattern or "*l")
+				if partial then
+					loaded_data = loaded_data..partial
+				end
 				if data then
-					local response = on_data(data)
+					local response = on_data(loaded_data..data)
+					loaded_data = ""
 					if response then
 						client.send(response)
 					end
