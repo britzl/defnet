@@ -68,7 +68,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 				table.remove(clients, i)
 				queues[connection_to_remove] = nil
 				if on_client_disconnected then
-					local client_ip, client_port = connection:getsockname()
+					local client_ip, client_port = connection:getpeername()
 					on_client_disconnected(client_ip, client_port, connection)
 				end
 				break
@@ -143,7 +143,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			table.insert(clients, client)
 			queues[client] = tcp_send_queue.create(client, M.TCP_SEND_CHUNK_SIZE)
 			if on_client_connected then
-				local client_ip, client_port = client:getsockname()
+				local client_ip, client_port = client:getpeername()
 				on_client_connected(client_ip, client_port, client)
 			end
 		end
@@ -154,7 +154,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			coroutine.wrap(function()
 				local data, err = server.receive(client)
 				if data and on_data then
-					local client_ip, client_port = client:getsockname()
+					local client_ip, client_port = client:getpeername()
 					local response = on_data(data, client_ip, client_port, client, function(response)
 						if not queues[client] then
 							return false
