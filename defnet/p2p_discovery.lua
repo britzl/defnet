@@ -9,6 +9,13 @@ local STATE_DISCONNECTED = "STATE_DISCONNECTED"
 local STATE_BROADCASTING = "STATE_BROADCASTING"
 local STATE_LISTENING = "STATE_LISTENING"
 
+
+local function starts_with( str, start )
+	if str == nil or start == nil then return false end
+	return str:sub( 1, #start ) == start
+end
+
+
 local function get_ip()
 	for _,network_card in pairs(sys.get_ifaddrs()) do
 		if network_card.up and network_card.address then
@@ -92,12 +99,9 @@ function M.create(port)
 			while state == STATE_LISTENING do
 				listener:settimeout(0)
 				local data, server_ip, server_port = listener:receivefrom()
-				if data and data == message then
-					callback(server_ip, server_port)
-					state = STATE_DISCONNECTED
-					break
+				if data and starts_with( data, message ) then
+					callback( server_ip, server_port, data )
 				end
-				--print("listening")
 				coroutine.yield()
 			end
 			listen_co = nil
