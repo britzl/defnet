@@ -56,8 +56,10 @@ local PORT = 50000
 
 function init(self)
 	self.p2p = p2p_discovery.create(PORT)
-	self.p2p.listen("findme", function(ip, port)
+	self.p2p.listen("findme", function(ip, port, message)
 		print("Found server", ip, port)
+		print("Message", message)
+		self.p2p.stop()
 	end)
 end
 
