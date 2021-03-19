@@ -100,7 +100,8 @@ function M.create(port)
 				listener:settimeout(0)
 				local data, server_ip, server_port = listener:receivefrom()
 				if data and starts_with( data, message ) then
-					callback( server_ip, server_port, data )
+					-- pass on optional payload only
+					callback(server_ip, server_port, data:sub(#message + 1))
 				end
 				coroutine.yield()
 			end
