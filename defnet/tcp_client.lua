@@ -25,7 +25,6 @@
 -- 	self.client.send("Sending this to the server\n")
 -- end
 
-local socket = require "socket.socket"
 local tcp_send_queue = require "defnet.tcp_send_queue"
 
 local M = {}

@@ -1,8 +1,6 @@
 --- Module to perform peer-to-peer discovery
 -- The module can either broadcast it's existence or listen for others
 
-local socket = require "socket.socket"
-
 local M = {}
 
 local STATE_DISCONNECTED = "STATE_DISCONNECTED"

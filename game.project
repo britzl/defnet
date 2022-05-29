@@ -1,8 +1,8 @@
 [project]
 title = DefNet
 version = 0.1
-dependencies = https://github.com/britzl/defold-luasocket/archive/0.11.zip,https://github.com/britzl/gooey/archive/6.3.0.zip
 custom_resources = examples/assets/www/
+dependencies#0 = https://github.com/britzl/gooey/archive/6.3.0.zip
 
 [bootstrap]
 main_collection = /examples/examples.collectionc

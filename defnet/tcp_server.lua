@@ -31,7 +31,6 @@
 --	end
 --
 
-local socket = require "socket.socket"
 local tcp_send_queue = require "defnet.tcp_send_queue"
 
 local M = {}
@@ -83,10 +82,14 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 	function server.start()
 		print("Starting TCP server on port " .. port)
 		local ok, err = pcall(function()
-			local skt, err = socket.bind("*", port)
+			local skt, err = socket.tcp()
 			assert(skt, err)
+			local status, err = skt:bind("*", port)
+			assert(status, err)
 			server_socket = skt
 			server_socket:settimeout(0)
+			local status, err = server_socket:listen()
+			assert(status, err)
 		end)
 		if not server_socket or err then
 			print("Unable to start TCP server", err)
