@@ -1,6 +1,8 @@
+<!DOCTYPE html>
 <html>
 <head>
 	<title>DefNet</title>
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
 	<script>
 		function post(postData) {
 			var url = "http://localhost:9190/handlepost";
@@ -33,7 +35,7 @@
 	<a href="/unhandledpage">404</a></br>
 
 	<p>
-		<form action="javascript: post(document.getElementById('posttext').value)" method="post">
+		<form action="javascript: post(document.getElementById('posttext').value)" method="POST" accept-charset="utf-8">
 			<legend>POST data</legend>
 			<input id="posttext" type="text"/></br>
 			<input type="submit"/></br>
@@ -41,9 +43,9 @@
 	</p>
 
 	<p>
-		<form action="/handleform" method="post">
+		<form action="/handleform" method="POST" accept-charset="utf-8">
 			<legend>Form data</legend>
-			<input id="formtext" type="text"/></br>
+			<input id="formtext" type="text" name="formtext"/></br>
 			<input type="submit"/></br>
 		</form>
 	</p>
