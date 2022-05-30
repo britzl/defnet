@@ -140,7 +140,7 @@ function M.create(port)
 		local ok, err = pcall(function()
 			local request, err = receive_request(conn)
 			if err then
-				return err
+				error(err, 0)
 			end
 
 			local request_line = table.remove(request, 1) or ""
@@ -187,7 +187,8 @@ function M.create(port)
 				end
 			end
 		end)
-		if not ok then
+		
+		if not ok and err ~= "closed" then
 			print(err)
 		end
 		return nil, err
