@@ -187,7 +187,6 @@ function M.create(port)
 				end
 			end
 		end)
-		
 		if not ok and err ~= "closed" then
 			print(err)
 		end
