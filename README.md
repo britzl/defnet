@@ -26,11 +26,6 @@ You can use the modules from this project in your own project by adding this pro
 
 Or point to the ZIP file of a [specific release](https://github.com/britzl/defnet/releases).
 
-DefNet also depends on additional files from the LuaSocket repository, not currently provided by Defold. In order to use DefNet properly you need to add a dependency to the defold-luasocket library project as well:
-
-	https://github.com/britzl/defold-luasocket/archive/0.11.zip
-
-
 ## Peer to peer discovery
 The `defnet/p2p_discovery` module can be used to perform peer to peer discovery using UDP sockets. The basic idea is that an app sets itself up as discoverable and starts sending a broadcast message on the network. Other clients can listen for broadcasted messages and get the IP of the app that wishes to be discovered. This is how an app can set itself up as discoverable:
 
