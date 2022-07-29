@@ -65,6 +65,7 @@ end
 
 Once discovery has been completed communication can take place over a socket of some kind.
 
+NOTE: While it may be possible to test with two or more clients running on the same machine it is not always guaranteed to work. It is recommended to test P2P discovery on multiple machines for the most accurate results.
 
 ## TCP socket server
 The `defnet/tcp_server` module can be used to create a TCP socket server that accepts incoming TCP client connections and can send and receive data. Example:
