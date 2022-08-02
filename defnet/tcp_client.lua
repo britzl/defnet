@@ -66,16 +66,18 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		return nil, ("Unable to connect to %s:%d"):format(server_ip, server_port)
 	end
 
-	--- Send data to the server. This function will add the data to a send queue
-	-- and the data will be sent when the @{update} function is called
-	-- @param data
+	function client.on_data(fn)
+		on_data = fn
+	end
+
+	function client.on_disconnect(fn)
+		on_disconnect = fn
+	end
+
 	function client.send(data)
 		send_queue.add(data)
 	end
 
-	--- Call this as often as possible. The function will do two things:
-	--  1. Send data that has been added to the send queue using @{send}
-	--  2. Receive data
 	local loaded_data = ""
 
 	function client.update()
@@ -117,9 +119,6 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		end
 	end
 
-	--- Call when the socket client should be destroyed
-	-- No other calls to the socket client can be done after it has
-	-- been destroyed
 	function client.destroy()
 		if client_socket then
 			client_socket:close()
@@ -130,5 +129,49 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 	return client
 end
 
+
+--- Set callback when data is received
+-- @param client
+-- @param fn The function to call when data is received
+function M.on_data(client, fn)
+	assert(client)
+	return client.on_data(fn)
+end
+
+--- Set callback when disconnected
+-- @param client
+-- @param fn The function to call when disconnected
+function M.on_disconnect(client, fn)
+	assert(client)
+	return client.on_disconnect(fn)
+end
+
+--- Send data to the server. This function will add the data to a send queue
+-- and the data will be sent when the @{update} function is called
+-- @param client
+-- @param data
+function M.send(client, data)
+	assert(client)
+	assert(data)
+	return client.send(data)
+end
+
+--- Call this as often as possible. The function will do two things:
+--  1. Send data that has been added to the send queue using @{send}
+--  2. Receive data
+-- @param client
+function M.update(client)
+	assert(client)
+	return client.update()
+end
+
+--- Call when the socket client should be destroyed
+-- No other calls to the socket client can be done after it has
+-- been destroyed
+-- @param client
+function M.destroy(client)
+	assert(client)
+	return client.destroy()
+end
 
 return M

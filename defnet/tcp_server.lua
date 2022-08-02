@@ -38,6 +38,10 @@ local M = {}
 
 M.TCP_SEND_CHUNK_SIZE = 8192
 
+M.log = print
+
+local log = function(...) M.log(...) end
+
 --- Creates a new TCP socket server
 -- @param port
 -- @param on_data Function to call when data is received. The
@@ -52,7 +56,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 	assert(port, "You must provide a port")
 	assert(on_data, "You must provide an on_data function")
 
-	print("Creating TCP server")
+	log("Creating TCP server")
 	
 	local server = {}
 
@@ -76,12 +80,20 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		end
 	end
 
-	--- Start the TCP socket server and listen for clients
-	-- Each connection is run in it's own coroutine
-	-- @return success
-	-- @return error_message
+	function server.on_data(fn)
+		on_data = fn
+	end
+
+	function server.on_client_connected(fn)
+		on_client_connected = fn
+	end
+
+	function server.on_client_disconnected(fn)
+		on_client_disconnected = fn
+	end
+	
 	function server.start()
-		print("Starting TCP server on port " .. port)
+		log("Starting TCP server on port " .. port)
 		local ok, err = pcall(function()
 			local skt, err = socket.bind("*", port)
 			assert(skt, err)
@@ -89,15 +101,14 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			server_socket:settimeout(0)
 		end)
 		if not server_socket or err then
-			print("Unable to start TCP server", err)
+			log("Unable to start TCP server", err)
 			return false, err
 		end
 		return true
 	end
 
-	--- Stop the TCP socket server. The socket and all
-	-- clients will be closed
 	function server.stop()
+		log("Stopping TCP server")
 		if server_socket then
 			server_socket:close()
 		end
@@ -108,18 +119,19 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		end
 	end
 	
-	
 	function server.receive(client)
 		return client:receive("*l")
 	end
 	
 	function server.broadcast(data)
+		log("Broadcasting")
 		for client,queue in pairs(queues) do
 			queue.add(data)
 		end
 	end
 
 	function server.send(data, client)
+		log("Sending data to", client)
 		for c,queue in pairs(queues) do
 			if c == client then
 				queue.add(data)
@@ -128,9 +140,6 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		end
 	end
 	
-	--- Update the TCP socket server. This will resume all
-	-- the spawned coroutines in order to check for new
-	-- clients and data on existing clients
 	function server.update()
 		if not server_socket then
 			return
@@ -182,6 +191,85 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 	end
 
 	return server
+end
+
+
+--- Start the TCP socket server and listen for clients
+-- Each connection is run in it's own coroutine
+-- @param server
+-- @return success
+-- @return error_message
+function M.start(server)
+	assert(server)
+	return server.start()
+end
+
+--- Stop the TCP socket server. The socket and all
+-- clients will be closed
+-- @param server
+function M.stop(server)
+	assert(server)
+	return server.stop()
+end
+
+--- Receive data from a client
+-- Override with your own implementation if necessary
+-- @param server
+-- @param client
+function M.receive(server, client)
+	assert(server)
+	assert(client)
+	return server.receive(client)
+end
+
+--- Broadcast data to all connected clients
+-- @param server
+-- @param data
+function M.broadcast(server, data)
+	assert(server)
+	assert(data)
+	return server.broadcast(data)
+end
+
+--- Send data to a connected client
+-- @param server
+-- @param data
+-- @param client
+function M.send(server, data, client)
+	assert(server)
+	assert(data)
+	assert(client)
+	return server.send(data, client)
+end
+
+--- Update the TCP socket server. This will resume all
+-- the spawned coroutines in order to check for new
+-- clients and data on existing clients
+-- @param server
+function M.update(server)
+	assert(server)
+	return server.update()
+end
+
+--- Set data callback
+-- @param server
+-- @param fn Function to call when data is received
+function M.on_data(server, fn)
+	return server.on_data(fn)
+end
+
+--- Set client connect callback
+-- @param server
+-- @param fn Function to call when a client connects
+function M.on_client_connected(server, fn)
+	return server.on_client_connected(fn)
+end
+
+--- Set client disconnect callback
+-- @param server
+-- @param fn Function to call a client disconnects
+function M.on_client_disconnected(server, fn)
+	return server.on_client_disconnected(fn)
 end
 
 return M
