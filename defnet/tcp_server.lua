@@ -80,19 +80,19 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		end
 	end
 
-	function server.on_data(fn)
+	server.on_data = function(fn)
 		on_data = fn
 	end
 
-	function server.on_client_connected(fn)
+	server.on_client_connected = function(fn)
 		on_client_connected = fn
 	end
 
-	function server.on_client_disconnected(fn)
+	server.on_client_disconnected = function(fn)
 		on_client_disconnected = fn
 	end
 	
-	function server.start()
+	server.start = function()
 		log("Starting TCP server on port " .. port)
 		local ok, err = pcall(function()
 			local skt, err = socket.bind("*", port)
@@ -107,7 +107,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		return true
 	end
 
-	function server.stop()
+	server.stop = function()
 		log("Stopping TCP server")
 		if server_socket then
 			server_socket:close()
@@ -119,18 +119,18 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		end
 	end
 	
-	function server.receive(client)
+	server.receive = function(client)
 		return client:receive("*l")
 	end
 	
-	function server.broadcast(data)
+	server.broadcast = function(data)
 		log("Broadcasting")
 		for client,queue in pairs(queues) do
 			queue.add(data)
 		end
 	end
 
-	function server.send(data, client)
+	server.send = function(data, client)
 		log("Sending data to", client)
 		for c,queue in pairs(queues) do
 			if c == client then
@@ -140,7 +140,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		end
 	end
 	
-	function server.update()
+	server.update = function()
 		if not server_socket then
 			return
 		end

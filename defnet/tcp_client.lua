@@ -31,6 +31,10 @@ local M = {}
 
 M.TCP_SEND_CHUNK_SIZE = 8192
 
+M.log = print
+
+local log = function(...) M.log(...) end
+
 --- Create a TCP socket client and connect it to a server
 -- @param server_ip
 -- @param server_port
@@ -44,7 +48,7 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 	assert(on_data, "You must provide an on_data callback function")
 	assert(on_disconnect, "You must provide an on_disconnect callback function")
 
-	print("Creating TCP client", server_ip, server_port)
+	log("Creating TCP client", server_ip, server_port)
 
 	local client = {
 		pattern = "*l",
@@ -62,25 +66,25 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		send_queue = tcp_send_queue.create(client_socket, M.TCP_SEND_CHUNK_SIZE)
 	end)
 	if not ok or not client_socket or not send_queue then
-		print("tcp_client.create() error", err)
+		log("tcp_client.create() error", err)
 		return nil, ("Unable to connect to %s:%d"):format(server_ip, server_port)
 	end
 
-	function client.on_data(fn)
+	client.on_data = function(fn)
 		on_data = fn
 	end
 
-	function client.on_disconnect(fn)
+	client.on_disconnect = function(fn)
 		on_disconnect = fn
 	end
 
-	function client.send(data)
+	client.send = function(data)
 		send_queue.add(data)
 	end
 
 	local loaded_data = ""
 
-	function client.update()
+	client.update = function()
 		if not client_socket then
 			return
 		end
@@ -119,7 +123,8 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 		end
 	end
 
-	function client.destroy()
+	client.destroy = function()
+		log("Destroying TCP client")
 		if client_socket then
 			client_socket:close()
 			client_socket = nil
