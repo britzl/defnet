@@ -253,21 +253,21 @@ end
 
 --- Set data callback
 -- @param server
--- @param fn Function to call when data is received
+-- @param fn Function to call when data is received (args: data, ip, port, client)
 function M.on_data(server, fn)
 	return server.on_data(fn)
 end
 
 --- Set client connect callback
 -- @param server
--- @param fn Function to call when a client connects
+-- @param fn Function to call when a client connects (args: ip, port, client)
 function M.on_client_connected(server, fn)
 	return server.on_client_connected(fn)
 end
 
 --- Set client disconnect callback
 -- @param server
--- @param fn Function to call a client disconnects
+-- @param fn Function to call a client disconnects (args: ip, port, client)
 function M.on_client_disconnected(server, fn)
 	return server.on_client_disconnected(fn)
 end
