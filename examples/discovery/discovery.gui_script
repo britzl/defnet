@@ -33,6 +33,7 @@ function on_input(self, action_id, action)
 			print("Found server", ip, port)
 			local logo = gui.get_node("logo")
 			gui.animate(logo, gui.PROP_POSITION, gui.get_position(logo) + vmath.vector3(0, 100, 0), gui.EASING_INBOUNCE, 1, 0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+			self.p2p.stop()
 		end)
 	end)
 end
