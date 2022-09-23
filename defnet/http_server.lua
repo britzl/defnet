@@ -33,6 +33,7 @@
 --
 
 local tcp_server = require "defnet.tcp_server"
+local http_router = require "defnet.http_router"
 
 local M = {}
 
@@ -124,11 +125,9 @@ function M.create(port)
 		server_header = "Server: Simple Lua Server v1",
 	}
 
-	local routes = {}
+	instance.router = http_router.create()
 	
 	local request_handlers = {}
-
-	local unhandled_route_fn = nil
 
 	local ss = tcp_server.create(port, function() end)
 
@@ -160,23 +159,7 @@ function M.create(port)
 			end
 			
 			-- handle request and get a response
-			local response
-			if uri then
-				for _,route in ipairs(routes) do
-					if not route.method or route.method == method then
-						local matches = { uri:match(route.pattern) }
-						if next(matches) then
-							response = route.fn(matches, stream_fn, headers, message_body)
-							break
-						end
-					end
-				end
-			end
-
-			-- unhandled response
-			if not response and unhandled_route_fn then
-				response = unhandled_route_fn(method, uri, stream_fn, headers, message_body)
-			end
+			local response = http_router.match(instance.router, method, uri)
 
 			-- send response
 			if response then
@@ -193,76 +176,15 @@ function M.create(port)
 		return nil, err
 	end
 
-	instance.router = {}
 
-	--- Route HTTP GET requests matching a specific pattern to a
-	-- provided function.
-	-- The function will receive a list of matches from the pattern as
-	-- it's first arguments. The second argument is a stream function in case
-	-- the response should be streamed.
-	-- The function must either return the full response or a function that
-	-- can be called multiple times to get more data to return.
-	-- @param pattern Standard Lua pattern
-	-- @param fn Function to call
-	function instance.router.get(pattern, fn)
-		assert(pattern, "You must provide a route pattern")
-		assert(fn, "You must provide a route handler function")
-		table.insert(routes, { method = "GET", pattern = pattern, fn = fn })
-	end
-	
-	--- Route HTTP POST requests matching a specific pattern to a
-	-- provided function.
-	-- The function will receive a list of matches from the pattern as
-	-- it's first arguments. The second argument is a stream function in case
-	-- the response should be streamed.
-	-- The function must either return the full response or a function that
-	-- can be called multiple times to get more data to return.
-	-- @param pattern Standard Lua pattern
-	-- @param fn Function to call
-	function instance.router.post(pattern, fn)
-		assert(pattern, "You must provide a route pattern")
-		assert(fn, "You must provide a route handler function")
-		table.insert(routes, { method = "POST", pattern = pattern, fn = fn })
-	end
-
-	--- Route all HTTP requests matching a specific pattern to a
-	-- provided function.
-	-- The function will receive a list of matches from the pattern as
-	-- it's first arguments. The second argument is a stream function in case
-	-- the response should be streamed.
-	-- The function must either return the full response or a function that
-	-- can be called multiple times to get more data to return.
-	-- @param pattern Standard Lua pattern
-	-- @param fn Function to call
-	function instance.router.all(pattern, fn)
-		assert(pattern, "You must provide a route pattern")
-		assert(fn, "You must provide a route handler function")
-		table.insert(routes, { method = nil, pattern = pattern, fn = fn })
-	end
-
-	--- Add a handler for unhandled routes. This is typically where
-	-- you would return a 404 page
-	-- @param fn The function to call when an unhandled route is encountered. The
-	-- function will receive the method and uri of the unhandled route as
-	-- arguments.
-	function instance.router.unhandled(fn)
-		assert(fn, "You must provide an unhandled route function")
-		unhandled_route_fn = fn
-	end
-
-	--- Start the server
-	-- @return success
-	-- @return error_message
 	function instance.start()
 		return ss.start()
 	end
 
-	--- Stop the server
 	function instance.stop()
 		ss.stop()
 	end
 
-	--- Stop the server
 	function instance.update()
 		ss.update()
 		for k,handler in pairs(request_handlers) do
@@ -357,6 +279,38 @@ function M.create(port)
 		return ("%x\r\n%s\r\n"):format(#data, data)
 	end
 	return instance
+end
+
+--- Start a server
+-- @param server
+-- @return success
+-- @return error_message
+function M.start(server)
+	assert(server)
+	return server.start()
+end
+
+--- Stop a server
+-- @param server
+function M.stop(server)
+	assert(server)
+	return server.stop()
+end
+
+--- Update a server
+-- @param server
+function M.update(server)
+	assert(server)
+	return server.update()
+end
+
+--- Set a router for a server
+-- @param server
+-- @param router
+function M.set_router(server, router)
+	assert(server)
+	assert(router)
+	server.router = router
 end
 
 return M
