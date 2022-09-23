@@ -118,6 +118,16 @@ end
 
 
 --- Create a new HTTP server
+-- Use start(), stop() and update() on the returned instance
+-- Set http route functions to react to incoming requests
+-- 
+-- A note on route functions:
+-- The function will receive a list of matches from the pattern as
+-- it's first arguments. The second argument is a stream function in case
+-- the response should be streamed.
+-- The function must either return the full response or a function that
+-- can be called multiple times to get more data to return.
+--
 -- @return Server instance
 function M.create(port)
 	local instance = {
@@ -159,7 +169,13 @@ function M.create(port)
 			end
 			
 			-- handle request and get a response
-			local response = http_router.match(instance.router, method, uri)
+			local response
+			local handled, fn, matches = instance.router.match(method, uri)
+			if handled then
+				response = fn(matches, stream_fn, headers, message_body)
+			elseif not handled and fn then
+				response = fn(method, uri, stream_fn, headers, message_body)
+			end
 
 			-- send response
 			if response then
@@ -188,12 +204,15 @@ function M.create(port)
 	function instance.update()
 		ss.update()
 		for k,handler in pairs(request_handlers) do
-			print("calling request handler")
 			if not handler() then
-				print("removing request handler")
 				request_handlers[k] = nil
 			end
 		end
+	end
+
+	function instance.set_router(router)
+		assert(router)
+		instance.router = router
 	end
 
 	--- Return a properly formatted HTML response with the
@@ -310,7 +329,7 @@ end
 function M.set_router(server, router)
 	assert(server)
 	assert(router)
-	server.router = router
+	return server.set_router(router)
 end
 
 return M
