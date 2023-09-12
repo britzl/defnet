@@ -73,7 +73,7 @@ The `defnet/tcp_server` module can be used to create a TCP socket server that ac
 ```
 local function on_data(data, ip, port, client)
 	print("Received", data, "from", ip)
-	return "My response"
+	return "My response\n"
 end
 
 local function on_client_connected(ip, port, client)
