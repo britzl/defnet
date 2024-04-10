@@ -67,7 +67,7 @@ function M.create(port)
 					coroutine.yield()
 				end
 			end
-			udp_broadcast:close()
+			broadcaster:close()
 			broadcast_co = nil
 		end)
 		return coroutine.resume(broadcast_co)
@@ -103,6 +103,7 @@ function M.create(port)
 				end
 				coroutine.yield()
 			end
+			listener:close()
 			listen_co = nil
 		end)
 		return coroutine.resume(listen_co)
