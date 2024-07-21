@@ -40,9 +40,10 @@ local log = function(...) M.log(...) end
 -- @param server_port
 -- @param on_data Function to call when data is received from the server
 -- @param on_disconnect Function to call when the connection to the server ends
+-- @param options Table with options (keys: connection_timeout (s))
 -- @return client
 -- @return error
-function M.create(server_ip, server_port, on_data, on_disconnect)
+function M.create(server_ip, server_port, on_data, on_disconnect, options)
 	assert(server_ip, "You must provide a server_ip")
 	assert(server_port, "You must provide a server_port")
 	assert(on_data, "You must provide an on_data callback function")
@@ -57,9 +58,11 @@ function M.create(server_ip, server_port, on_data, on_disconnect)
 	local client_socket = nil
 	local send_queue = nil
 	local client_socket_table = nil
+	local connection_timeout = options and options.connection_timeout or nil
 
 	local ok, err = pcall(function()
 		client_socket = socket.tcp()
+		assert(client_socket:settimeout(connection_timeout))
 		assert(client_socket:connect(server_ip, server_port))
 		assert(client_socket:settimeout(0))
 		client_socket_table = { client_socket }

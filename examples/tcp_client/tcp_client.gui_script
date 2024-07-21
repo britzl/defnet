@@ -28,11 +28,12 @@ function on_input(self, action_id, action)
 		end
 	end)
 	dirtylarry.button("connect", action_id, action, function()
-		local client, err = tcp_client.create("127.0.0.1", SERVER_PORT,
+		local address = "127.0.0.1"
+		local client, err = tcp_client.create(address, SERVER_PORT,
 			function(data)
 				print(data)
 				local logo = gui.get_node("logo")
-				gui.animate(logo, "rotation.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
+				gui.animate(logo, "euler.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
 			end,
 			function()
 				self.client = nil

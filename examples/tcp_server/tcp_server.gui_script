@@ -6,7 +6,7 @@ local TCP_SERVER_PORT = 5555
 local function on_data(data, ip, port, client)
 	print("TCP server received data '" .. data .. "' from " .. ip .. ":" .. port)
 	local logo = gui.get_node("logo")
-	gui.animate(logo, "rotation.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
+	gui.animate(logo, "euler.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
 end
 
 local function on_client_connected(ip, port, client)
