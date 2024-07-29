@@ -139,7 +139,11 @@ function M.create(port)
 	
 	local request_handlers = {}
 
-	local ss = tcp_server.create(port, function() end)
+	local options = { binary = false }
+	local on_data = function() end
+	local on_client_connected = function() end
+	local on_client_disconnected = function() end
+	local ss = tcp_server.create(port, on_data, on_client_connected, on_client_disconnected, options)
 
 	-- Replace the underlying socket server's receive function
 	-- Read lines until end of request

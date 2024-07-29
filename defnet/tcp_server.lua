@@ -31,7 +31,7 @@
 --	end
 --
 
-local tcp_send_queue = require "defnet.tcp_send_queue"
+local tcp_data_queue = require "defnet.tcp_data_queue"
 local socket = require "builtins.scripts.socket"
 
 local M = {}
@@ -51,8 +51,9 @@ local log = function(...) M.log(...) end
 -- connected. The function will be called with the following args: ip
 -- @param on_client_disconnected Function to call when a client has
 -- disconnected. The function will be called with the following args: ip
+-- @param options Table with options (keys: binary, chunk_size)
 -- @return Server instance
-function M.create(port, on_data, on_client_connected, on_client_disconnected)
+function M.create(port, on_data, on_client_connected, on_client_disconnected, options)
 	assert(port, "You must provide a port")
 	assert(on_data, "You must provide an on_data function")
 
@@ -65,6 +66,10 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 
 	local clients = {}
 	local queues = {}
+	local queue_options = {
+		chunk_size = options and options.chunk_size or M.TCP_SEND_CHUNK_SIZE,
+		binary = options and options.binary or false,
+	}
 
 	local function remove_client(connection_to_remove)
 		for i,connection in pairs(clients) do
@@ -118,11 +123,11 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 			client:close()
 		end
 	end
-	
+
 	server.receive = function(client)
-		return client:receive("*l")
+		return queues[client].receive()
 	end
-	
+
 	server.broadcast = function(data)
 		log("Broadcasting")
 		for client,queue in pairs(queues) do
@@ -150,7 +155,7 @@ function M.create(port, on_data, on_client_connected, on_client_disconnected)
 		if client then
 			client:settimeout(0)
 			table.insert(clients, client)
-			queues[client] = tcp_send_queue.create(client, M.TCP_SEND_CHUNK_SIZE)
+			queues[client] = tcp_data_queue.create(client, queue_options)
 			if on_client_connected then
 				local client_ip, client_port = client:getpeername()
 				on_client_connected(client_ip, client_port, client)

@@ -24,14 +24,16 @@ end
 function on_input(self, action_id, action)
 	dirtylarry.button("send", action_id, action, function()
 		for i=math.random(1,3),1,-1 do
-			self.client.send("foobar " .. tostring(os.time() .. "_" .. i) .. "\r\n")
+			local data = "foobar " .. tostring(os.time() .. "_" .. i)
+			self.client.send(data)
 		end
 	end)
 	dirtylarry.button("connect", action_id, action, function()
 		local address = "127.0.0.1"
+		local options = { binary = true }
 		local client, err = tcp_client.create(address, SERVER_PORT,
 			function(data)
-				print(data)
+				print("TCP client received data '" .. data .. "' from server")
 				local logo = gui.get_node("logo")
 				gui.animate(logo, "euler.z", gui.get_rotation(logo).z -360, gui.EASING_INOUTEXPO, 2, 0, nil, gui.PLAYBACK_ONCE_FORWARD)
 			end,
@@ -39,7 +41,8 @@ function on_input(self, action_id, action)
 				self.client = nil
 				dirtylarry.set_enabled(dirtylarry.button("connect"), true)
 				dirtylarry.set_enabled(dirtylarry.button("send"), false)
-			end)
+			end,
+			options)
 
 		if client then
 			self.client = client

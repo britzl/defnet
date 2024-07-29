@@ -25,7 +25,7 @@
 -- 	self.client.send("Sending this to the server\n")
 -- end
 
-local tcp_send_queue = require "defnet.tcp_send_queue"
+local tcp_data_queue = require "defnet.tcp_data_queue"
 
 local M = {}
 
@@ -40,7 +40,7 @@ local log = function(...) M.log(...) end
 -- @param server_port
 -- @param on_data Function to call when data is received from the server
 -- @param on_disconnect Function to call when the connection to the server ends
--- @param options Table with options (keys: connection_timeout (s))
+-- @param options Table with options (keys: connection_timeout (s), binary, chunk_size)
 -- @return client
 -- @return error
 function M.create(server_ip, server_port, on_data, on_disconnect, options)
@@ -51,14 +51,16 @@ function M.create(server_ip, server_port, on_data, on_disconnect, options)
 
 	log("Creating TCP client", server_ip, server_port)
 
-	local client = {
-		pattern = "*l",
-	}
+	local client = {}
 
 	local client_socket = nil
-	local send_queue = nil
+	local data_queue = nil
 	local client_socket_table = nil
 	local connection_timeout = options and options.connection_timeout or nil
+	local data_queue_options = {
+		chunk_size = options and options.chunk_size or M.TCP_SEND_CHUNK_SIZE,
+		binary = options and options.binary or false,
+	}
 
 	local ok, err = pcall(function()
 		client_socket = socket.tcp()
@@ -66,9 +68,9 @@ function M.create(server_ip, server_port, on_data, on_disconnect, options)
 		assert(client_socket:connect(server_ip, server_port))
 		assert(client_socket:settimeout(0))
 		client_socket_table = { client_socket }
-		send_queue = tcp_send_queue.create(client_socket, M.TCP_SEND_CHUNK_SIZE)
+		data_queue = tcp_data_queue.create(client_socket, data_queue_options)
 	end)
-	if not ok or not client_socket or not send_queue then
+	if not ok or not client_socket or not data_queue then
 		log("tcp_client.create() error", err)
 		return nil, ("Unable to connect to %s:%d"):format(server_ip, server_port)
 	end
@@ -82,10 +84,8 @@ function M.create(server_ip, server_port, on_data, on_disconnect, options)
 	end
 
 	client.send = function(data)
-		send_queue.add(data)
+		data_queue.add(data)
 	end
-
-	local loaded_data = ""
 
 	client.update = function()
 		if not client_socket then
@@ -96,7 +96,7 @@ function M.create(server_ip, server_port, on_data, on_disconnect, options)
 		local receivet, sendt = socket.select(client_socket_table, client_socket_table, 0)
 
 		if sendt[client_socket] then
-			local ok, err = send_queue.send()
+			local ok, err = data_queue.send()
 			if not ok and err == "closed" then
 				client.destroy()
 				on_disconnect()
@@ -106,13 +106,9 @@ function M.create(server_ip, server_port, on_data, on_disconnect, options)
 
 		if receivet[client_socket] then
 			while client_socket do
-				local data, err, partial = client_socket:receive(client.pattern or "*l")
-				if partial then
-					loaded_data = loaded_data..partial
-				end
+				local data, err = data_queue.receive()
 				if data then
-					local response = on_data(loaded_data..data)
-					loaded_data = ""
+					local response = on_data(data)
 					if response then
 						client.send(response)
 					end
