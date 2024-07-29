@@ -53,7 +53,7 @@ function M.create(client, options)
 		if binary then
 			data = encode_size(data) .. data
 		else
-			data = data .. "\n"
+			data = data
 		end
 		for i=1,#data,chunk_size do
 			table.insert(send_queue, { data = data:sub(i, i + chunk_size - 1), sent_index = 0 })
