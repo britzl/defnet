@@ -41,11 +41,11 @@ local M = {}
 -- @return UDP connection
 function M.create(on_data, port, peer_ip, peer_port)
 	assert(on_data, "You must provide a callback function")
-	
+
 	print("Creating UDP connection")
-	
+
 	local instance = {}
-	
+
 	local udp = nil
 
 	local ok, err = pcall(function()
@@ -55,7 +55,7 @@ function M.create(on_data, port, peer_ip, peer_port)
 		if port then
 			assert(udp:setsockname("*", port))
 		end
-		
+
 		if peer_ip and peer_port then
 			assert(udp:setpeername(peer_ip, peer_port))
 		end
@@ -64,7 +64,7 @@ function M.create(on_data, port, peer_ip, peer_port)
 		print("udp_client.create() error", err)
 		return nil, "Unable to create client"
 	end
-	
+
 	--- Send data
 	-- @param data
 	-- @param ip Destination IP to send data to. Must be nil if peer_ip was specified when creating this object
@@ -89,20 +89,22 @@ function M.create(on_data, port, peer_ip, peer_port)
 		if not udp then
 			return
 		end
-		
+
 		if peer_ip and peer_port then
 			local data = udp:receive()
-			if data then
+			while data do
 				on_data(data, peer_ip, peer_port)
+				data = udp:receive() -- Keep checking until empty
 			end
 		else
 			local data, ip, port = udp:receivefrom()
-			if data then
+			while data do
 				on_data(data, ip, port)
+				data, ip, port = udp:receivefrom() -- Keep checking until empty
 			end
 		end
 	end
-	
+
 	--- Destroy the UDP connection. The underlying socket will be closed
 	-- and no additional operations can be made on the socket.
 	function instance.destroy()
@@ -110,13 +112,13 @@ function M.create(on_data, port, peer_ip, peer_port)
 			udp:close()
 		end
 	end
-		
+
 	function instance.ip_and_port()
 		local ip, port = udp:getsockname()
 		port = tonumber(port)
 		return ip, port
 	end
-	
+
 	return instance
 end
 
