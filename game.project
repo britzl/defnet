@@ -11,8 +11,8 @@ main_collection = /examples/examples.collectionc
 game_binding = /input/game.input_bindingc
 
 [display]
-width = 640
-height = 1136
+width = 1136
+height = 640
 
 [physics]
 scale = 0.02

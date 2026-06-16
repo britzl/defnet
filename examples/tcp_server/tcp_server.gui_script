@@ -22,8 +22,9 @@ function init(self)
 
 	dirtylarry.set_enabled(dirtylarry.button("stop"), false)
 	dirtylarry.set_enabled(dirtylarry.button("broadcast"), false)
-		
-	self.tcp_server = tcp_server.create(TCP_SERVER_PORT, on_data, on_client_connected, on_client_disconnected)
+	
+	local options = { binary = true }
+	self.tcp_server = tcp_server.create(TCP_SERVER_PORT, on_data, on_client_connected, on_client_disconnected, options)
 end
 
 function final(self)
@@ -53,6 +54,7 @@ function on_input(self, action_id, action)
 		self.tcp_server.stop()
 	end)
 	dirtylarry.button("broadcast", action_id, action, function()
-		self.tcp_server.broadcast("tcp from sever to client foobar\n")
+		local data = "foobar " .. tostring(os.time())
+		self.tcp_server.broadcast(data)
 	end)
 end
